@@ -1,0 +1,6 @@
+.card {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--card-radius);
+  padding: clamp(var(--space-5), 2.5vw, 40px);
+}

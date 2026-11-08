@@ -1,0 +1,37 @@
+name: Auto Pull Request
+
+# Abre automáticamente un Pull Request hacia main cada vez que se
+# empuja una rama de trabajo (cualquier rama distinta de main).
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-pr:
+    name: Abrir PR hacia main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Crear Pull Request si no existe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          existing=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq 'length')
+          if [ "$existing" -gt 0 ]; then
+            echo "Ya existe un PR abierto para la rama $BRANCH."
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "Merge $BRANCH into main" \
+              --body "Pull request abierto automáticamente al empujar la rama \`$BRANCH\`."
+          fi

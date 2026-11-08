@@ -1,0 +1,121 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-4) clamp(var(--space-5), 3vw, 48px);
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-surface);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-brand);
+}
+
+.brandName {
+  font-size: 1.4rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0 0 0 var(--space-5);
+  padding: 0;
+}
+
+.link {
+  background: none;
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  font-weight: var(--font-weight-regular);
+}
+
+.link:hover {
+  background: var(--color-chip-soft);
+}
+
+.linkActive {
+  background: var(--color-chip-soft);
+  font-weight: var(--font-weight-bold);
+}
+
+.right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.bell {
+  position: relative;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  display: grid;
+  place-items: center;
+  padding: var(--space-2);
+}
+
+.badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-bold);
+  display: grid;
+  place-items: center;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-chip-soft);
+  color: var(--color-brand);
+  display: grid;
+  place-items: center;
+  font-weight: var(--font-weight-bold);
+}
+
+.userName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+.userRole {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .links {
+    display: none;
+  }
+  .userText {
+    display: none;
+  }
+}

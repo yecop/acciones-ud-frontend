@@ -1,0 +1,127 @@
+.card {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: clamp(var(--space-5), 2vw, 32px);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.sector {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.table td {
+  padding: var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--color-divider);
+  font-size: var(--font-size-sm);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.symbol {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-md);
+}
+
+.alignRight {
+  text-align: right;
+}
+
+.price {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-md);
+}
+
+.change {
+  font-weight: var(--font-weight-bold);
+}
+
+.positive {
+  color: var(--color-positive);
+}
+
+.negative {
+  color: var(--color-negative);
+}
+
+.action {
+  border: 1.5px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-5);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.action:hover {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: var(--color-text-on-brand);
+}
+
+/* El spark (barra de cambio) se oculta en móvil para ahorrar espacio */
+.sparkCell {
+  width: 120px;
+}
+
+.spark {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-chip-soft);
+  overflow: hidden;
+}
+
+.sparkFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.sparkFill.positive {
+  background: var(--color-positive);
+}
+
+.sparkFill.negative {
+  background: var(--color-negative);
+}
+
+@media (max-width: 720px) {
+  .sparkCell,
+  .hideSmall {
+    display: none;
+  }
+}

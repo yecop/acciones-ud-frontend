@@ -1,0 +1,89 @@
+.hero {
+  background: linear-gradient(
+    160deg,
+    var(--color-brand-hero) 0%,
+    var(--color-brand-hero-deep) 100%
+  );
+  color: var(--color-text-on-brand);
+  padding: clamp(var(--space-7), 5vw, 72px);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.brandName {
+  font-size: clamp(1.6rem, 2vw, 2rem);
+  font-weight: var(--font-weight-bold);
+}
+
+.content {
+  margin-top: auto;
+  margin-bottom: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 600px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2.2rem, 4.2vw, 3.6rem);
+  font-weight: var(--font-weight-extrabold);
+  line-height: 1.12;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+  color: var(--color-on-brand-muted);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.4;
+}
+
+.features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: clamp(1rem, 1.3vw, 1.3rem);
+}
+
+.featureIcon {
+  color: #6ee7a8;
+  flex: 0 0 auto;
+}
+
+.markets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+}
+
+.marketTag {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+@media (max-width: 900px) {
+  .content {
+    margin: var(--space-7) 0;
+  }
+}
