@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import InvestmentProfilePage from "./pages/InvestmentProfilePage.jsx";
 import VerificationPage from "./pages/VerificationPage.jsx";
+import PortafolioView from "./pages/PortafolioView.jsx";
 
 /**
  * Raíz de la aplicación Acciones UD.
  *
  * Enrutamiento ligero basado en hash (sin dependencias extra) para navegar
- * entre las tres pantallas del flujo:
+ * entre las pantallas del flujo:
  *   #/panel         → Panel principal (dashboard)
+ *   #/portafolio    → Mi dinero y mis posiciones (SCRUM-25)
  *   #/perfil        → Perfil de inversión (onboarding paso 2)
  *   #/verificacion  → Verificación en dos pasos (OTP)
  *
@@ -17,8 +19,16 @@ import VerificationPage from "./pages/VerificationPage.jsx";
  */
 const ROUTES = {
   "#/panel": "dashboard",
+  "#/portafolio": "portafolio",
   "#/perfil": "profile",
   "#/verificacion": "verification",
+};
+
+/** Mapea el id de un item de navegación al hash de su ruta. */
+const NAV_HASH = {
+  panel: "#/panel",
+  portafolio: "#/portafolio",
+  perfil: "#/perfil",
 };
 
 function getRoute() {
@@ -36,6 +46,13 @@ export default function App() {
 
   const navigate = (hash) => {
     window.location.hash = hash;
+  };
+
+  // Navegación desde el TopNav: recibe el id del item y lo lleva a su hash.
+  const navigateById = (id) => {
+    const hash = NAV_HASH[id];
+    if (hash) navigate(hash);
+    else console.info("Navegar a:", id);
   };
 
   // Ejemplo de integración REST con el API Gateway.
@@ -65,6 +82,8 @@ export default function App() {
   };
 
   switch (route) {
+    case "portafolio":
+      return <PortafolioView onNavigate={navigateById} />;
     case "profile":
       return (
         <InvestmentProfilePage
@@ -86,7 +105,7 @@ export default function App() {
         <DashboardPage
           onNewOrder={() => navigate("#/perfil")}
           onTrade={(symbol) => console.info("Operar:", symbol)}
-          onNavigate={(id) => console.info("Navegar a:", id)}
+          onNavigate={navigateById}
           onSubmitOrder={submitOrder}
         />
       );
