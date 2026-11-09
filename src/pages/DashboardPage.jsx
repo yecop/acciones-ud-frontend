@@ -3,7 +3,7 @@ import styles from "./DashboardPage.module.css";
 import TopNav from "../components/dashboard/TopNav.jsx";
 import KpiCards from "../components/dashboard/KpiCards.jsx";
 import PriceChartCard from "../components/dashboard/PriceChartCard.jsx";
-import MarketsCard from "../components/dashboard/MarketsCard.jsx";
+import MercadosStatusWidget from "../components/dashboard/MercadosStatusWidget.jsx";
 import Watchlist from "../components/dashboard/Watchlist.jsx";
 import ActivityCard from "../components/dashboard/ActivityCard.jsx";
 import OrderForm from "../components/order/OrderForm.jsx";
@@ -65,7 +65,7 @@ export default function DashboardPage({
               isMarketOpen={data.trading.isMarketOpen}
               onSubmit={onSubmitOrder}
             />
-            <MarketsCard markets={data.markets} note={data.marketsNote} />
+            <MercadosStatusWidget title="Estado de mercados" />
             <ActivityCard items={data.activity} />
           </div>
         </div>
