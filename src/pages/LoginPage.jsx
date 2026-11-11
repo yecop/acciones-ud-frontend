@@ -1,85 +1,68 @@
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import AuthLayout from "../components/layout/AuthLayout.jsx";
+import LoginForm from "../components/auth/LoginForm.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { ESPERA_BLOQUEO_POR_DEFECTO_SEGUNDOS } from "../auth/mfaConfig.js";
+import { useCuentaRegresiva } from "../hooks/useCuentaRegresiva.js";
 import { RUTA_INICIAL_POR_ROL, RUTAS } from "../routes/routesConfig.js";
-import styles from "./LoginPage.module.css";
+
+/** Convierte los `detalles` de un 400 en `{ campo: problema }` para el formulario. */
+function erroresPorCampo(error) {
+  const campos = {};
+  error.detalles?.forEach(({ campo, problema }) => {
+    if (campo && problema) campos[campo] = problema;
+  });
+  return campos;
+}
 
 /**
- * Primer factor del ingreso (correo y contraseña). PROVISIONAL: SCRUM-28 define la pantalla
- * definitiva de login; aquí solo existe para poder abrir sesión contra el mock y probar rutas.
+ * Ingreso: primer factor (correo y contraseña). Si el backend acepta las credenciales,
+ * deja un reto MFA en la sesión y sigue a la verificación del código.
  */
 export default function LoginPage() {
-  const { autenticado, rol, iniciarSesion } = useAuth();
+  const { autenticado, rol, iniciarSesion, sesionExpirada } = useAuth();
   const navigate = useNavigate();
   const ubicacion = useLocation();
-  const [correo, setCorreo] = useState("");
-  const [contrasena, setContrasena] = useState("");
+
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [enviando, setEnviando] = useState(false);
+  const [bloqueoHasta, setBloqueoHasta] = useState(null);
+  const bloqueadoSegundos = useCuentaRegresiva(bloqueoHasta);
 
   if (autenticado) return <Navigate to={RUTA_INICIAL_POR_ROL[rol] ?? "/"} replace />;
 
-  const enviar = async (evento) => {
-    evento.preventDefault();
+  const enviar = async (credenciales) => {
     setError(null);
+    setFieldErrors({});
     setEnviando(true);
     try {
-      await iniciarSesion({ correo, contrasena });
+      await iniciarSesion(credenciales);
       // `desde` viaja hasta la verificación para volver a la pantalla que se quería abrir.
       navigate(RUTAS.verificacion, { state: ubicacion.state });
     } catch (e) {
       setError(e.mensajeUsuario ?? "No fue posible iniciar sesión.");
-    } finally {
+      if (e.codigo === "VALIDACION_FALLIDA") setFieldErrors(erroresPorCampo(e));
+      if (e.status === 429) {
+        const segundos = e.retryAfter ?? ESPERA_BLOQUEO_POR_DEFECTO_SEGUNDOS;
+        setBloqueoHasta(Date.now() + segundos * 1000);
+      }
       setEnviando(false);
     }
   };
 
   return (
-    <main className={styles.page}>
-      <form className={styles.card} onSubmit={enviar} noValidate>
-        <p className={styles.step}>Paso 1 de 2 · Credenciales</p>
-        <h1 className={styles.title}>Ingresa a Acciones UD</h1>
-
-        <label className={styles.field}>
-          <span>Correo electrónico</span>
-          <input
-            type="email"
-            autoComplete="username"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            required
-          />
-        </label>
-
-        <label className={styles.field}>
-          <span>Contraseña</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
-            required
-          />
-        </label>
-
-        {error && (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          className={styles.submit}
-          disabled={enviando || !correo || !contrasena}
-        >
-          {enviando ? "Verificando…" : "Continuar"}
-        </button>
-
-        <button type="button" className={styles.link} onClick={() => navigate(RUTAS.registro)}>
-          ¿No tienes cuenta? Regístrate
-        </button>
-      </form>
-    </main>
+    <AuthLayout>
+      <LoginForm
+        onSubmit={enviar}
+        error={error}
+        fieldErrors={fieldErrors}
+        notice={sesionExpirada ? "Tu sesión expiró. Inicia sesión de nuevo." : null}
+        loading={enviando}
+        bloqueadoSegundos={bloqueadoSegundos}
+        onRegister={() => navigate(RUTAS.registro)}
+      />
+    </AuthLayout>
   );
 }

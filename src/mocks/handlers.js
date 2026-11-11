@@ -1,6 +1,13 @@
 import { delay, http as rest, HttpResponse } from "msw";
 import { nuevoUuid } from "../api/httpClient.js";
-import { CODIGO_MFA_EXPIRADO, CODIGO_MFA_VALIDO, COMISIONISTAS, db } from "./db.js";
+import {
+  BLOQUEO_LOGIN_SEGUNDOS,
+  CODIGO_MFA_EXPIRADO,
+  CODIGO_MFA_VALIDO,
+  COMISIONISTAS,
+  db,
+  MAX_FALLOS_LOGIN,
+} from "./db.js";
 import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
 
 /**
@@ -201,12 +208,25 @@ export const handlers = [
       if (detalles.length) {
         return error(request, 400, "VALIDACION_FALLIDA", "Datos inválidos.", { detalles });
       }
-      const usuario = db.usuarios.find(
-        (u) => u.correo === String(correo).toLowerCase() && u.contrasena === contrasena
-      );
+      const clave = String(correo).toLowerCase();
+      const intentos = db.intentosLogin.get(clave) ?? { fallos: 0, bloqueadoHasta: 0 };
+      if (intentos.bloqueadoHasta > Date.now()) {
+        const espera = Math.ceil((intentos.bloqueadoHasta - Date.now()) / 1000);
+        return error(request, 429, "DEMASIADAS_SOLICITUDES", "Demasiados intentos de ingreso.", {
+          headers: { "Retry-After": String(espera) },
+        });
+      }
+      const usuario = db.usuarios.find((u) => u.correo === clave && u.contrasena === contrasena);
       if (!usuario) {
+        intentos.fallos += 1;
+        if (intentos.fallos >= MAX_FALLOS_LOGIN) {
+          intentos.fallos = 0;
+          intentos.bloqueadoHasta = Date.now() + BLOQUEO_LOGIN_SEGUNDOS * 1000;
+        }
+        db.intentosLogin.set(clave, intentos);
         return error(request, 401, "CREDENCIALES_INVALIDAS", "Correo o contraseña incorrectos.");
       }
+      db.intentosLogin.delete(clave);
       const mfaToken = nuevoUuid();
       db.retosMfa.set(mfaToken, { usuarioId: usuario.id, intentos: 0, reenvios: 0 });
       return HttpResponse.json({ mfaToken, canal: "EMAIL", expiraEn: 300 });

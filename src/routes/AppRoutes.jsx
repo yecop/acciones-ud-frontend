@@ -1,14 +1,13 @@
-import { useMemo, useState } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import AppShell from "../layout/AppShell.jsx";
 import DashboardPage from "../pages/DashboardPage.jsx";
 import InvestmentProfilePage from "../pages/InvestmentProfilePage.jsx";
 import LoginPage from "../pages/LoginPage.jsx";
 import StatusPage from "../pages/StatusPage.jsx";
-import VerificationPage from "../pages/VerificationPage.jsx";
+import MfaPage from "../pages/MfaPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
-import { session } from "../auth/session.js";
 import { dashboardData } from "../data/dashboardData.js";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { RUTA_INICIAL_POR_ROL, RUTAS, RUTAS_PROTEGIDAS, rutaDeNavegacion } from "./routesConfig.js";
@@ -18,50 +17,6 @@ function Inicio() {
   const { autenticado, rol } = useAuth();
   const destino = autenticado ? (RUTA_INICIAL_POR_ROL[rol] ?? RUTAS.sinAcceso) : RUTAS.ingreso;
   return <Navigate to={destino} replace />;
-}
-
-/** Segundo factor (MFA). Toma el reto que dejó el login y, al verificar, abre la sesión. */
-function RutaVerificacion() {
-  const { autenticado, verificarMfa, reenviarMfa } = useAuth();
-  const navigate = useNavigate();
-  const ubicacion = useLocation();
-  const [error, setError] = useState(null);
-  const [cargando, setCargando] = useState(false);
-
-  if (autenticado) return <Navigate to="/" replace />;
-  if (!session.getMfaToken()) return <Navigate to={RUTAS.ingreso} replace />;
-
-  const verificar = async ({ code }) => {
-    setError(null);
-    setCargando(true);
-    try {
-      const usuario = await verificarMfa(code);
-      const destino = ubicacion.state?.desde ?? RUTA_INICIAL_POR_ROL[usuario.rol] ?? "/";
-      navigate(destino, { replace: true });
-    } catch (e) {
-      setError(e.mensajeUsuario ?? "No fue posible verificar el código.");
-      setCargando(false);
-    }
-  };
-
-  const reenviar = async () => {
-    setError(null);
-    try {
-      await reenviarMfa();
-    } catch (e) {
-      setError(e.mensajeUsuario ?? "No fue posible reenviar el código.");
-    }
-  };
-
-  return (
-    <VerificationPage
-      onVerify={verificar}
-      onResend={reenviar}
-      onRegister={() => navigate(RUTAS.registro)}
-      error={error}
-      loading={cargando}
-    />
-  );
 }
 
 /** Perfil de inversión del registro. SCRUM-27 conecta `POST /auth/registro`. */
@@ -130,7 +85,7 @@ export default function AppRoutes() {
 
       {/* Públicas */}
       <Route path={RUTAS.ingreso} element={<LoginPage />} />
-      <Route path={RUTAS.verificacion} element={<RutaVerificacion />} />
+      <Route path={RUTAS.verificacion} element={<MfaPage />} />
       <Route path={RUTAS.registro} element={<RutaRegistro />} />
       <Route
         path={RUTAS.sinAcceso}

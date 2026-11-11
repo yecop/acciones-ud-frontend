@@ -12,6 +12,10 @@ export const CODIGO_MFA_VALIDO = "482913";
 /** Código que el mock trata como vencido (para probar `MFA_EXPIRADO`). */
 export const CODIGO_MFA_EXPIRADO = "111111";
 
+/** Intentos de login fallidos permitidos antes de bloquear, y duración del bloqueo. */
+export const MAX_FALLOS_LOGIN = 5;
+export const BLOQUEO_LOGIN_SEGUNDOS = 30;
+
 /** Vida del access token en ms. Configurable con VITE_MOCK_ACCESS_TTL_SECONDS. */
 export const TTL_ACCESS_MS = Number(import.meta.env?.VITE_MOCK_ACCESS_TTL_SECONDS ?? 900) * 1000;
 
@@ -64,6 +68,8 @@ export const db = {
   tokensRefresh: new Map(),
   /** mfaToken → { usuarioId, intentos, reenvios } */
   retosMfa: new Map(),
+  /** correo → { fallos, bloqueadoHasta } (límite de intentos de login). */
+  intentosLogin: new Map(),
   /** Contadores para inspeccionar el comportamiento en pruebas. */
   contadores: { refresh: 0 },
 
@@ -72,6 +78,7 @@ export const db = {
     this.tokensAcceso.clear();
     this.tokensRefresh.clear();
     this.retosMfa.clear();
+    this.intentosLogin.clear();
     this.contadores.refresh = 0;
   },
 

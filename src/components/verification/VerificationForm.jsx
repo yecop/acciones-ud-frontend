@@ -1,50 +1,69 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { formatearTiempo } from "../../utils/tiempo.js";
 import styles from "./VerificationForm.module.css";
 import OtpInput from "./OtpInput.jsx";
 
 /**
- * Formulario de verificación OTP (columna derecha).
+ * Formulario de verificación OTP (segundo factor).
+ *
+ * Es presentacional: los tiempos llegan ya calculados (`venceEnSegundos`,
+ * `esperaReenvioSegundos`, `bloqueadoSegundos`) y las decisiones las toma la página.
  *
  * @param {object} props
- * @param {string} [props.step]          Texto del paso (ej. "Paso 2 de 2 · Verificación").
+ * @param {string} [props.step]
  * @param {string} [props.title]
- * @param {string} [props.maskedTarget]  Destino enmascarado del código.
- * @param {string} [props.expiresIn]     Tiempo de vencimiento (ej. "04:32").
+ * @param {string} [props.destino]          A dónde se envió el código («tu correo electrónico»).
  * @param {number} [props.codeLength]
- * @param {Array<{id:string,label:string}>} [props.channels]
- * @param {string} [props.defaultChannel]
- * @param {function} props.onVerify      Recibe { code, channel }.
+ * @param {number|null} [props.venceEnSegundos] Segundos de vigencia restantes; null oculta el dato.
+ * @param {boolean} [props.expirado]        El código venció: no se puede verificar, sí reenviar.
+ * @param {number} [props.esperaReenvioSegundos] Espera restante para pedir otro código.
+ * @param {number} [props.bloqueadoSegundos]    Bloqueo por intentos excedidos (429).
+ * @param {string|null} [props.error]
+ * @param {string|null} [props.info]        Aviso positivo (p. ej. «te enviamos un código nuevo»).
+ * @param {boolean} [props.loading]
+ * @param {boolean} [props.reenviando]
+ * @param {boolean} [props.sinReto]         No hay código vigente que verificar (hay que volver).
+ * @param {number} [props.resetKey]         Al cambiar, limpia el código y devuelve el foco.
+ * @param {function} props.onVerify         Recibe `{ code }`.
  * @param {function} props.onResend
- * @param {function} props.onRegister
- * @param {string|null} [props.error]    Mensaje de error a mostrar (traducido por el cliente HTTP).
- * @param {boolean} [props.loading]      Deshabilita el envío mientras se verifica.
+ * @param {function} [props.onBack]         Volver a las credenciales.
+ * @param {function} [props.onEdit]         Se llama cuando la persona modifica el código.
  */
 export default function VerificationForm({
   step = "Paso 2 de 2 · Verificación",
   title = "Ingresa tu código",
-  maskedTarget = "ju***@correo.com",
-  expiresIn = "04:32",
+  destino = "tu correo electrónico",
   codeLength = 6,
-  channels = [
-    { id: "email", label: "Correo electrónico" },
-    { id: "sms", label: "SMS al celular terminado en 4471" },
-  ],
-  defaultChannel = "email",
+  venceEnSegundos = null,
+  expirado = false,
+  esperaReenvioSegundos = 0,
+  bloqueadoSegundos = 0,
+  error = null,
+  info = null,
+  loading = false,
+  reenviando = false,
+  sinReto = false,
+  resetKey = 0,
   onVerify,
   onResend,
-  onRegister,
-  error = null,
-  loading = false,
+  onBack,
+  onEdit,
 }) {
   const [code, setCode] = useState(Array(codeLength).fill(""));
-  const [channel, setChannel] = useState(defaultChannel);
 
-  const isComplete = code.every((digit) => digit !== "");
+  // Tras un código inválido la página cambia `resetKey`: se limpia el campo.
+  useEffect(() => {
+    setCode(Array(codeLength).fill(""));
+  }, [resetKey, codeLength]);
 
-  const handleVerify = () => {
-    const joined = code.join("");
-    if (onVerify) onVerify({ code: joined, channel });
-    else console.info("Verificando código:", { code: joined, channel });
+  const bloqueado = bloqueadoSegundos > 0;
+  const completo = code.every((digit) => digit !== "");
+  const puedeVerificar = completo && !loading && !expirado && !bloqueado && !sinReto;
+  const puedeReenviar = esperaReenvioSegundos === 0 && !reenviando && !sinReto;
+
+  const cambiarCodigo = (nuevo) => {
+    setCode(nuevo);
+    onEdit?.();
   };
 
   return (
@@ -53,32 +72,27 @@ export default function VerificationForm({
         <p className={styles.step}>{step}</p>
         <h2 className={styles.title}>{title}</h2>
         <p className={styles.description}>
-          Enviamos un código de {codeLength} dígitos a {maskedTarget}. Vence en {expiresIn}.
+          Enviamos un código de {codeLength} dígitos a {destino}.
+          {venceEnSegundos !== null &&
+            !expirado &&
+            ` Vence en ${formatearTiempo(venceEnSegundos)}.`}
         </p>
 
-        <OtpInput length={codeLength} value={code} onChange={setCode} />
+        <OtpInput
+          length={codeLength}
+          value={code}
+          onChange={cambiarCodigo}
+          autoFocus
+          resetKey={resetKey}
+          disabled={bloqueado || sinReto}
+          invalid={Boolean(error)}
+        />
 
-        <p className={styles.channelLabel}>Recibir el código por</p>
-        <div className={styles.channels} role="radiogroup" aria-label="Recibir el código por">
-          {channels.map((item) => {
-            const active = channel === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                className={`${styles.channel} ${active ? styles.channelActive : ""}`}
-                onClick={() => setChannel(item.id)}
-              >
-                <span className={styles.radio} aria-hidden="true">
-                  <span className={styles.radioDot} />
-                </span>
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
+        {expirado && !error && (
+          <p className={styles.error} role="alert">
+            El código venció. Solicita uno nuevo.
+          </p>
+        )}
 
         {error && (
           <p className={styles.error} role="alert">
@@ -86,22 +100,43 @@ export default function VerificationForm({
           </p>
         )}
 
+        {info && (
+          <p className={styles.info} role="status">
+            {info}
+          </p>
+        )}
+
         <button
           type="button"
           className={styles.submit}
-          onClick={handleVerify}
-          disabled={!isComplete || loading}
+          onClick={() => onVerify?.({ code: code.join("") })}
+          disabled={!puedeVerificar}
         >
-          {loading ? "Verificando…" : "Verificar e ingresar"}
+          {loading
+            ? "Verificando…"
+            : bloqueado
+              ? `Intenta de nuevo en ${formatearTiempo(bloqueadoSegundos)}`
+              : "Verificar e ingresar"}
         </button>
 
         <div className={styles.footer}>
-          <button type="button" className={styles.link} onClick={onResend}>
-            Reenviar código
+          <button
+            type="button"
+            className={styles.link}
+            onClick={onResend}
+            disabled={!puedeReenviar}
+          >
+            {reenviando
+              ? "Enviando…"
+              : esperaReenvioSegundos > 0
+                ? `Reenviar código en ${formatearTiempo(esperaReenvioSegundos)}`
+                : "Reenviar código"}
           </button>
-          <button type="button" className={styles.link} onClick={onRegister}>
-            ¿No tienes cuenta? Regístrate
-          </button>
+          {onBack && (
+            <button type="button" className={styles.link} onClick={onBack}>
+              Volver a iniciar sesión
+            </button>
+          )}
         </div>
       </section>
     </div>
