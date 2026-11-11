@@ -16,6 +16,8 @@ import OtpInput from "./OtpInput.jsx";
  * @param {function} props.onVerify      Recibe { code, channel }.
  * @param {function} props.onResend
  * @param {function} props.onRegister
+ * @param {string|null} [props.error]    Mensaje de error a mostrar (traducido por el cliente HTTP).
+ * @param {boolean} [props.loading]      Deshabilita el envío mientras se verifica.
  */
 export default function VerificationForm({
   step = "Paso 2 de 2 · Verificación",
@@ -31,6 +33,8 @@ export default function VerificationForm({
   onVerify,
   onResend,
   onRegister,
+  error = null,
+  loading = false,
 }) {
   const [code, setCode] = useState(Array(codeLength).fill(""));
   const [channel, setChannel] = useState(defaultChannel);
@@ -76,13 +80,19 @@ export default function VerificationForm({
           })}
         </div>
 
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
+
         <button
           type="button"
           className={styles.submit}
           onClick={handleVerify}
-          disabled={!isComplete}
+          disabled={!isComplete || loading}
         >
-          Verificar e ingresar
+          {loading ? "Verificando…" : "Verificar e ingresar"}
         </button>
 
         <div className={styles.footer}>
