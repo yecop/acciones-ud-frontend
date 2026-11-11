@@ -1,12 +1,18 @@
 import { setupWorker } from "msw/browser";
 import { CODIGO_MFA_VALIDO, CONTRASENA_DEMO, db } from "./db.js";
 import { handlers } from "./handlers.js";
+import { conectarPersistencia } from "./persistence.js";
 
 /**
  * Levanta el servidor mock en el navegador (Service Worker de MSW).
  * Solo se importa cuando VITE_USE_MOCK=true (`npm start`).
  */
 export async function iniciarMock() {
+  try {
+    conectarPersistencia(db, window.sessionStorage);
+  } catch {
+    /* modo privado */
+  }
   const worker = setupWorker(...handlers);
   await worker.start({
     onUnhandledRequest: "bypass",

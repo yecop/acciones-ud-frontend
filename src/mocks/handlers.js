@@ -361,9 +361,15 @@ export const handlers = [
           detalles: [{ campo: "nombre", problema: "No puede estar vacío" }],
         });
       }
+      if (cambios.celular !== undefined && !/^\+?\d{7,15}$/.test(cambios.celular)) {
+        return error(request, 400, "VALIDACION_FALLIDA", "Datos inválidos.", {
+          detalles: [{ campo: "celular", problema: "Ingresa entre 7 y 15 dígitos" }],
+        });
+      }
       ["nombre", "celular", "intereses"].forEach((campo) => {
         if (cambios[campo] !== undefined) usuario[campo] = cambios[campo];
       });
+      db.persistir();
       return HttpResponse.json(vistaPerfil(usuario));
     })
   ),
@@ -382,7 +388,47 @@ export const handlers = [
           detalles: [{ campo: "notificaciones.canales", problema: "Debe ser una lista" }],
         });
       }
+      const detalles = [];
+      const op = preferencias.operaciones ?? {};
+      const montoValido = (n) => /^\d{1,12}(\.\d{1,2})?$/.test(String(n)) && Number(n) > 0;
+      if (
+        !preferencias.notificaciones.canales.length ||
+        preferencias.notificaciones.canales.some((c) => !["EMAIL", "SMS", "WHATSAPP"].includes(c))
+      )
+        detalles.push({
+          campo: "notificaciones.canales",
+          problema: "Selecciona al menos un canal válido",
+        });
+      if (
+        op.tipoOrdenPorDefecto !== undefined &&
+        !["MARKET", "LIMIT", "STOP_LOSS", "TAKE_PROFIT"].includes(op.tipoOrdenPorDefecto)
+      )
+        detalles.push({
+          campo: "operaciones.tipoOrdenPorDefecto",
+          problema: "El tipo de orden no está disponible",
+        });
+      if (op.limiteDiario !== undefined && !montoValido(op.limiteDiario))
+        detalles.push({
+          campo: "operaciones.limiteDiario",
+          problema: "El límite debe ser un monto positivo con hasta dos decimales",
+        });
+      if (op.dobleAutorizacion && !montoValido(op.umbralOrdenGrande))
+        detalles.push({
+          campo: "operaciones.umbralOrdenGrande",
+          problema: "Define un umbral positivo para la doble autorización",
+        });
+      if (
+        preferencias.visualizacion?.portafolio !== undefined &&
+        !["TABLA", "TARJETAS"].includes(preferencias.visualizacion.portafolio)
+      )
+        detalles.push({
+          campo: "visualizacion.portafolio",
+          problema: "La vista no está disponible",
+        });
+      if (detalles.length)
+        return error(request, 400, "VALIDACION_FALLIDA", "Datos inválidos.", { detalles });
       usuario.preferencias = preferencias;
+      db.persistir();
       return HttpResponse.json(usuario.preferencias);
     })
   ),

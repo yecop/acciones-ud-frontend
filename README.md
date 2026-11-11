@@ -111,6 +111,15 @@ prueba falla si falta alguno.
 usar el cliente común, cambian `obtenerJson(ruta)` por `http.get(ruta)` y quitan el prefijo
 `/api/v1` de la ruta; así reciben token, trazabilidad, renovación y errores traducidos.
 
+## Perfil y preferencias (SCRUM-29)
+
+En `#/perfil`, los usuarios autenticados pueden editar nombre y celular. El inversionista
+puede guardar canales de notificación, vista del portafolio, tema, tipo de orden (trailing stop
+deshabilitado), límite diario, doble autorización, umbral de orden grande y reporte mensual.
+Los errores se muestran por campo; los datos básicos y las preferencias se guardan por separado.
+El mock conserva la configuración al recargar la pestaña. Ver [docs/perfil-preferencias.md](docs/perfil-preferencias.md)
+para probarlo y consultar los campos pendientes de confirmar con el backend.
+
 ## Login, MFA y sesión
 
 El registro está en `#/registro`: valida datos personales, intereses, nivel, riesgo y objetivos;
