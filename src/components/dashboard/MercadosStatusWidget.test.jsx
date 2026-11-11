@@ -33,6 +33,7 @@ describe("MercadosStatusWidget", () => {
     await waitFor(() => {
       expect(screen.getAllByText(/^(Abierto|Cerrado)$/).length).toBeGreaterThan(0);
     });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("muestra las restricciones vigentes de un mercado", async () => {
@@ -66,6 +67,7 @@ describe("MercadosStatusWidget", () => {
 
     expect(await screen.findByText("Año Nuevo")).toBeInTheDocument();
     expect(screen.getByText("Cerrado")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("si el servidor falla, muestra el mensaje traducido del contrato", async () => {
@@ -80,12 +82,14 @@ describe("MercadosStatusWidget", () => {
     );
     render(<MercadosStatusWidget intervaloMs={1000000} />);
 
-    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    // No debe ser el error de "sin conexión": el servidor sí respondió.
+    const alerta = await screen.findByRole("alert");
+    expect(alerta).not.toHaveTextContent(/no pudimos conectarnos/i);
   });
 
   it("sin sesión, la petición se rechaza y el widget lo informa sin romperse", async () => {
     render(<MercadosStatusWidget intervaloMs={1000000} />);
 
-    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(/iniciar sesión/i);
   });
 });
