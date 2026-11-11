@@ -168,13 +168,50 @@ export const handlers = [
   rest.post(
     `${RAIZ}/auth/registro`,
     publico(async ({ request }) => {
-      const { correo, contrasena, nombre } = await leerCuerpo(request);
+      const {
+        correo,
+        contrasena,
+        nombre,
+        celular,
+        nivelExperiencia,
+        intereses,
+        perfilRiesgo,
+        objetivos,
+      } = await leerCuerpo(request);
       const detalles = [];
       if (!correo || !/^\S+@\S+\.\S+$/.test(correo))
         detalles.push({ campo: "correo", problema: "Correo inválido" });
       if (!contrasena || contrasena.length < 8)
         detalles.push({ campo: "contrasena", problema: "Mínimo 8 caracteres" });
       if (!nombre?.trim()) detalles.push({ campo: "nombre", problema: "Es obligatorio" });
+      if (!/^\+?\d{7,15}$/.test(celular ?? ""))
+        detalles.push({ campo: "celular", problema: "Ingresa entre 7 y 15 dígitos" });
+      if (!["PRINCIPIANTE", "EXPERIMENTADO"].includes(nivelExperiencia))
+        detalles.push({ campo: "nivelExperiencia", problema: "Selecciona un nivel válido" });
+      if (!["CONSERVADOR", "MODERADO", "AGRESIVO"].includes(perfilRiesgo))
+        detalles.push({ campo: "perfilRiesgo", problema: "Selecciona un perfil de riesgo válido" });
+      const catalogos = {
+        mercados: ["NYSE", "NASDAQ", "LSE", "TSE", "ASX"],
+        sectores: ["TECNOLOGIA", "SALUD", "CONSUMO", "ENERGIA", "FINANZAS"],
+      };
+      Object.entries(catalogos).forEach(([campo, permitidos]) => {
+        const valores = intereses?.[campo];
+        if (
+          !Array.isArray(valores) ||
+          !valores.length ||
+          valores.some((valor) => !permitidos.includes(valor))
+        )
+          detalles.push({
+            campo: `intereses.${campo}`,
+            problema: "Selecciona al menos una opción válida",
+          });
+      });
+      if (
+        !Array.isArray(objetivos) ||
+        !objetivos.length ||
+        objetivos.some((valor) => !["AHORRO", "CRECIMIENTO", "INGRESOS"].includes(valor))
+      )
+        detalles.push({ campo: "objetivos", problema: "Selecciona al menos un objetivo válido" });
       if (detalles.length) {
         return error(request, 400, "VALIDACION_FALLIDA", "Datos inválidos.", { detalles });
       }
@@ -187,12 +224,18 @@ export const handlers = [
         correo: correo.toLowerCase(),
         nombre: nombre.trim(),
         contrasena,
+        celular,
+        nivelExperiencia,
+        intereses,
+        perfilRiesgo,
+        objetivos,
+        estado: "PENDIENTE_ALTA",
         rol: "INVERSIONISTA",
         comisionista: null,
       };
       db.usuarios.push(usuario);
       return HttpResponse.json(
-        { id: usuario.id, correo: usuario.correo, nombre: usuario.nombre },
+        { id: usuario.id, correo: usuario.correo, nombre: usuario.nombre, estado: usuario.estado },
         { status: 201 }
       );
     })
@@ -227,6 +270,11 @@ export const handlers = [
         return error(request, 401, "CREDENCIALES_INVALIDAS", "Correo o contraseña incorrectos.");
       }
       db.intentosLogin.delete(clave);
+      if (usuario.estado === "PENDIENTE_ALTA") {
+        return error(request, 403, "USUARIO_RESTRINGIDO", "Cuenta pendiente de alta.", {
+          datos: { estado: "PENDIENTE_ALTA" },
+        });
+      }
       const mfaToken = nuevoUuid();
       db.retosMfa.set(mfaToken, { usuarioId: usuario.id, intentos: 0, reenvios: 0 });
       return HttpResponse.json({ mfaToken, canal: "EMAIL", expiraEn: 300 });

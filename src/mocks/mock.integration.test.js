@@ -90,7 +90,16 @@ describe("mock · autenticación", () => {
     await expect(
       http.post(
         "/auth/registro",
-        { correo: "laura@correo.com", contrasena: "Segura123", nombre: "Otra" },
+        {
+          correo: "laura@correo.com",
+          contrasena: "Segura123",
+          nombre: "Otra",
+          celular: "3001234567",
+          nivelExperiencia: "PRINCIPIANTE",
+          perfilRiesgo: "MODERADO",
+          intereses: { mercados: ["NYSE"], sectores: ["TECNOLOGIA"] },
+          objetivos: ["AHORRO"],
+        },
         { auth: false }
       )
     ).rejects.toMatchObject({ status: 409, codigo: "CORREO_DUPLICADO" });
