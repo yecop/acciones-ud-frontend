@@ -95,6 +95,16 @@ export function AuthProvider({ children }) {
   /** Abandona el reto en curso (volver a las credenciales). */
   const descartarReto = useCallback(() => guardarReto(null), [guardarReto]);
 
+  /** Actualiza únicamente el nombre devuelto por /perfil, manteniendo identidad y rol. */
+  const actualizarNombre = useCallback((nombre) => {
+    setUsuario((prev) => {
+      if (!prev || prev.nombre === nombre) return prev;
+      const actualizado = { ...prev, nombre };
+      session.setUsuario(actualizado);
+      return actualizado;
+    });
+  }, []);
+
   /** Cierra la sesión: invalida el token en el backend y limpia el estado local. */
   const cerrarSesion = useCallback(async () => {
     try {
@@ -121,6 +131,7 @@ export function AuthProvider({ children }) {
       reenviarMfa,
       actualizarReto,
       descartarReto,
+      actualizarNombre,
       cerrarSesion,
     }),
     [
@@ -132,6 +143,7 @@ export function AuthProvider({ children }) {
       reenviarMfa,
       actualizarReto,
       descartarReto,
+      actualizarNombre,
       cerrarSesion,
     ]
   );

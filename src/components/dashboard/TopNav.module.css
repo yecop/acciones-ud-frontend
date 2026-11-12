@@ -133,6 +133,16 @@
 }
 
 @media (max-width: 860px) {
+  .nav {
+    flex-wrap: wrap;
+  }
+  .right {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
   .links {
     display: none;
   }

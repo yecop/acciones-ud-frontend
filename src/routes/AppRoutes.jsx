@@ -6,6 +6,7 @@ import RegistrationPage from "../pages/RegistrationPage.jsx";
 import LoginPage from "../pages/LoginPage.jsx";
 import StatusPage from "../pages/StatusPage.jsx";
 import MfaPage from "../pages/MfaPage.jsx";
+import ProfilePage from "../pages/ProfilePage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
 import { dashboardData } from "../data/dashboardData.js";
@@ -95,7 +96,10 @@ export default function AppRoutes() {
         <Route element={<AppShell />}>
           {RUTAS_PROTEGIDAS.filter((r) => r.id !== "panel").map((ruta) => (
             <Route key={ruta.id} element={<ProtectedRoute roles={ruta.roles} />}>
-              <Route path={ruta.path} element={<PaginaPendiente ruta={ruta} />} />
+              <Route
+                path={ruta.path}
+                element={ruta.id === "perfil" ? <ProfilePage /> : <PaginaPendiente ruta={ruta} />}
+              />
             </Route>
           ))}
         </Route>

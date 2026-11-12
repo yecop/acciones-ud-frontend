@@ -31,9 +31,15 @@ function usuariosIniciales() {
     intereses: { mercados: ["NYSE", "NASDAQ"], sectores: ["TECNOLOGIA"] },
     comisionista: null,
     preferencias: {
-      notificaciones: { canales: ["EMAIL"] },
-      visualizacion: { tema: "esmeralda" },
-      operaciones: { confirmarAntesDeEnviar: true },
+      notificaciones: { canales: ["EMAIL"], reporteMensual: false },
+      visualizacion: { tema: "esmeralda", portafolio: "TABLA" },
+      operaciones: {
+        confirmarAntesDeEnviar: true,
+        tipoOrdenPorDefecto: "MARKET",
+        limiteDiario: "10000.00",
+        dobleAutorizacion: false,
+        umbralOrdenGrande: "1000.00",
+      },
     },
   });
   return [
@@ -61,6 +67,8 @@ export const COMISIONISTAS = [
 ];
 
 export const db = {
+  // Adaptador de persistencia exclusivo del mock del navegador; Node/pruebas usan memoria.
+  persistir: () => {},
   usuarios: usuariosIniciales(),
   /** token → { usuarioId, expiraEn } (los vencidos se conservan para responder TOKEN_EXPIRADO). */
   tokensAcceso: new Map(),
@@ -80,6 +88,7 @@ export const db = {
     this.retosMfa.clear();
     this.intentosLogin.clear();
     this.contadores.refresh = 0;
+    this.persistir();
   },
 
   /** Emite un par de tokens para el usuario. */
@@ -88,6 +97,7 @@ export const db = {
     const refreshToken = `mock-refresh-${nuevoUuid()}`;
     this.tokensAcceso.set(accessToken, { usuarioId, expiraEn: Date.now() + TTL_ACCESS_MS });
     this.tokensRefresh.set(refreshToken, usuarioId);
+    this.persistir();
     return { accessToken, refreshToken, tokenType: "Bearer", expiraEn: TTL_ACCESS_MS / 1000 };
   },
 
