@@ -1,0 +1,135 @@
+/**
+ * Temas de color de Acciones UD — 4 paletas.
+ *
+ * Cada tema redefine las mismas variables de color que consumen los
+ * componentes. El tema activo se selecciona con el atributo `data-theme`
+ * en el elemento <html> (ver ThemeContext).
+ *
+ * Variables de color estándar (contrato compartido por todos los temas):
+ *   --color-brand            Color primario (botones, marca)
+ *   --color-brand-strong     Primario en hover / presionado
+ *   --color-brand-accent     Acento (líneas de gráfico, detalles)
+ *   --color-brand-hero       Fondo del hero (degradado, inicio)
+ *   --color-brand-hero-deep  Fondo del hero (degradado, fin)
+ *   --color-on-brand-muted   Texto atenuado sobre el hero
+ *   --color-positive         Estado positivo (ganancias)
+ *   --color-negative         Estado negativo (pérdidas, alertas)
+ *   --color-chip-soft        Fondo suave de chips/resúmenes
+ *   --color-text             Texto principal
+ *   --color-text-muted       Texto secundario
+ *   --color-text-on-brand    Texto sobre color primario
+ *   --color-surface          Superficie de tarjetas
+ *   --color-page             Fondo de página
+ *   --color-border           Borde neutro
+ *   --color-border-strong    Borde de énfasis
+ *   --color-divider          Separadores
+ */
+
+/* ============================================================
+ * 1. Esmeralda Tradicional (tema por defecto)
+ *    #0A192F · #10B981 · #1E293B · #F8FAFC
+ * ============================================================ */
+:root,
+[data-theme="esmeralda"] {
+  --color-brand: #10b981;
+  --color-brand-strong: #0e9f70;
+  --color-brand-accent: #10b981;
+  --color-brand-hero: #0a192f;
+  --color-brand-hero-deep: #1e293b;
+  --color-on-brand-muted: #cdeee0;
+
+  --color-positive: #10b981;
+  --color-negative: #e5484d;
+  --color-chip-soft: #e7f7f0;
+
+  --color-text: #0a192f;
+  --color-text-muted: #1e293b;
+  --color-text-on-brand: #ffffff;
+
+  --color-surface: #ffffff;
+  --color-page: #f8fafc;
+  --color-border: #d6ddd8;
+  --color-border-strong: #1e293b;
+  --color-divider: #e3e8e5;
+}
+
+/* ============================================================
+ * 2. Verde Neón
+ *    #121212 · #00E676 · #212121 · #F4F6F8
+ * ============================================================ */
+[data-theme="neon"] {
+  --color-brand: #00e676;
+  --color-brand-strong: #00c765;
+  --color-brand-accent: #00e676;
+  --color-brand-hero: #121212;
+  --color-brand-hero-deep: #212121;
+  --color-on-brand-muted: #b9f6d5;
+
+  --color-positive: #00c765;
+  --color-negative: #ff5252;
+  --color-chip-soft: #e6faef;
+
+  --color-text: #121212;
+  --color-text-muted: #212121;
+  --color-text-on-brand: #0a0a0a;
+
+  --color-surface: #ffffff;
+  --color-page: #f4f6f8;
+  --color-border: #d7dbdf;
+  --color-border-strong: #212121;
+  --color-divider: #e6e9ec;
+}
+
+/* ============================================================
+ * 3. Azul Cobalto
+ *    #2563EB · #16A34A · #374151 · #F3F4F6
+ * ============================================================ */
+[data-theme="cobalto"] {
+  --color-brand: #2563eb;
+  --color-brand-strong: #1d4fc4;
+  --color-brand-accent: #16a34a;
+  --color-brand-hero: #1e3a8a;
+  --color-brand-hero-deep: #374151;
+  --color-on-brand-muted: #d6e0f5;
+
+  --color-positive: #16a34a;
+  --color-negative: #dc2626;
+  --color-chip-soft: #eaf0fd;
+
+  --color-text: #1f2937;
+  --color-text-muted: #374151;
+  --color-text-on-brand: #ffffff;
+
+  --color-surface: #ffffff;
+  --color-page: #f3f4f6;
+  --color-border: #d4d9e0;
+  --color-border-strong: #374151;
+  --color-divider: #e5e7eb;
+}
+
+/* ============================================================
+ * 4. Verde Bosque
+ *    #0B4C2C · #FFFFFF · #D1FAE5 · #F4F6F8
+ * ============================================================ */
+[data-theme="bosque"] {
+  --color-brand: #0b4c2c;
+  --color-brand-strong: #083a21;
+  --color-brand-accent: #0b4c2c;
+  --color-brand-hero: #0b4c2c;
+  --color-brand-hero-deep: #083a21;
+  --color-on-brand-muted: #d1fae5;
+
+  --color-positive: #0b4c2c;
+  --color-negative: #c0392b;
+  --color-chip-soft: #d1fae5;
+
+  --color-text: #0b2c1c;
+  --color-text-muted: #35564a;
+  --color-text-on-brand: #ffffff;
+
+  --color-surface: #ffffff;
+  --color-page: #f4f6f8;
+  --color-border: #c3dccd;
+  --color-border-strong: #0b4c2c;
+  --color-divider: #dcebe2;
+}
