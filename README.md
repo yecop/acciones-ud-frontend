@@ -140,6 +140,16 @@ Flujo: `/ingreso` (credenciales) → `/verificacion` (código de 6 dígitos) →
 - El reto MFA sobrevive a una recarga (`sessionStorage`).
 - Dónde guardar el refresh token: ver [docs/refresh-token-storage.md](docs/refresh-token-storage.md).
 
+## Mercados, saldo y portafolio
+
+Los módulos de estado de mercados (SCRUM-23) y de saldo y portafolio (SCRUM-25) usan el cliente
+HTTP común, igual que el resto: `src/api/mercadosApi.js` y `src/api/portafolioApi.js`.
+Con eso heredan el token, la renovación automática, `X-Trace-Id` y los mensajes de error en español.
+Para agregar un módulo nuevo basta con importar `http` de `src/api/http.js`; no se usa `fetch` directo.
+
+- Widget de mercados (`MercadosStatusWidget`) en el panel, con refresco periódico.
+- `/portafolio` (rol INVERSIONISTA) muestra saldo, resumen y posiciones dentro del marco común.
+
 ## Servidor mock
 
 `src/mocks/` simula los endpoints de esta semana con [MSW](https://mswjs.io) y la forma exacta
