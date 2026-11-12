@@ -1,114 +1,176 @@
 # Acciones UD — Interfaz web
 
-Interfaz web de la plataforma de day trading **Acciones UD**, implementada en
-**React** a partir de los mockups de Figma, con **CSS Modules** y tokens de
-diseño para un layout responsivo.
-
-## Pantallas
-
-| Ruta (hash)       | Pantalla                              |
-| ----------------- | ------------------------------------- |
-| `#/panel`         | Panel principal (dashboard de trading) |
-| `#/portafolio`    | Mi dinero y mis posiciones (SCRUM-25)  |
-| `#/perfil`        | Perfil de inversión (onboarding paso 2) |
-| `#/verificacion`  | Verificación en dos pasos (OTP)        |
-
-La navegación usa un router ligero basado en hash en `App.jsx` (sin dependencias
-extra). El botón "Nueva orden" del panel enlaza al perfil y, al enviar el perfil,
-se pasa a la verificación; al verificar, se vuelve al panel.
-
-## Stack
-
-- React 18 + Vite
-- CSS Modules + variables CSS (design tokens)
-- Tipografía Manrope (Google Fonts)
+Interfaz web de la plataforma de day trading **Acciones UD**, implementada en **React** con
+**CSS Modules** y tokens de diseño. Se comunica con el backend a través del contrato
+_Especificación de la API REST_ (`/api/v1`).
 
 ## Primeros pasos
 
 ```bash
 npm install
-npm run dev      # servidor de desarrollo (http://localhost:5173)
-npm run build    # build de producción
+npm start        # app + servidor mock (MSW): no necesita backend
+npm run dev      # app contra el backend real (proxy de Vite a VITE_PROXY_TARGET, 8080 por defecto)
+npm run build    # build de producción (no incluye el mock)
 npm run preview  # previsualiza el build
 ```
+
+| Script                 | Qué hace                                                |
+| ---------------------- | ------------------------------------------------------- |
+| `npm start`            | Vite en modo `mock`: levanta la app con la API simulada |
+| `npm run dev`          | Vite contra el backend real                             |
+| `npm run lint`         | ESLint (bloqueante en CI)                               |
+| `npm run format`       | Prettier (escribe)                                      |
+| `npm run format:check` | Prettier (solo verifica)                                |
+| `npm test`             | Vitest (bloqueante en CI)                               |
+
+### Cuentas del mock
+
+Contraseña de todas: `Demo1234` · Código MFA: `482913` (`111111` simula un código vencido).
+
+| Correo              | Rol                  | Pantalla inicial |
+| ------------------- | -------------------- | ---------------- |
+| `laura@correo.com`  | Inversionista (INV)  | `#/panel`        |
+| `carlos@correo.com` | Comisionista (COM)   | `#/comisionista` |
+| `admin@correo.com`  | Administrador (ADM)  | `#/admin`        |
+| `legal@correo.com`  | Legal (LEG)          | `#/auditoria`    |
+| `junta@correo.com`  | Junta directiva (JD) | `#/reportes`     |
+
+Para ver la renovación automática del token: inicia sesión, abre la consola del navegador y
+ejecuta `window.__mock.expirarToken()`; la siguiente acción de la app se completa sin que se
+note y `window.__mock.renovaciones()` pasa a `1`.
+
+## Variables de entorno
+
+Copia `.env.example` a `.env.local` para cambiarlas en tu máquina. `npm start` usa `.env.mock`.
+
+| Variable                       | Descripción                                             |
+| ------------------------------ | ------------------------------------------------------- |
+| `VITE_API_BASE_URL`            | Origen del backend sin `/api/v1`. Vacío = mismo origen. |
+| `VITE_PROXY_TARGET`            | Backend al que apunta el proxy de `npm run dev`.        |
+| `VITE_USE_MOCK`                | `true` activa el servidor mock.                         |
+| `VITE_MOCK_ACCESS_TTL_SECONDS` | Vida del access token del mock (900 por defecto).       |
+
+## Rutas y roles
+
+Router con `HashRouter` (`#/panel`), que se despliega en hosting estático sin reglas de
+reescritura. **`src/routes/routesConfig.js` es la fuente única**: cada ruta declara los roles
+que pueden verla y de ahí salen tanto el router como el menú de cada rol.
+
+- Sin sesión → `#/ingreso` (recuerda a dónde quería ir).
+- Con sesión pero sin el rol → pantalla «No tienes acceso» (403).
+- Pantallas reales: ingreso (provisional hasta SCRUM-28), verificación MFA, registro (perfil de
+  inversión) y panel. El resto de rutas existen y están protegidas, con una pantalla
+  «En construcción» que indica la tarea que las construye.
+- **Layout responsivo**: en escritorio, barra superior con el menú del rol; en móvil (≤ 860 px),
+  barra de navegación inferior.
+
+Para agregar una pantalla: crear la página, registrar la ruta en `routesConfig.js` con sus roles
+y reemplazar `PaginaPendiente` en `AppRoutes.jsx`.
+
+## Cliente HTTP
+
+Todo acceso a la API pasa por `src/api/http.js` (`createHttpClient` en `httpClient.js`). Los
+módulos `src/api/*Api.js` solo declaran los endpoints y **no deben usar `fetch` directamente**.
+Las rutas se escriben sin prefijo: `http.get("/perfil")` llama a `/api/v1/perfil`.
+
+Interceptores:
+
+- **Solicitud:** `Authorization: Bearer <accessToken>` (salvo `auth: false` en endpoints PUB),
+  `X-Trace-Id` (UUID nuevo por solicitud) e `Idempotency-Key` cuando se pasa `idempotencyKey`.
+- **Renovación automática:** ante `401 TOKEN_EXPIRADO` renueva con `/auth/refresh` **una sola vez**
+  y repite la solicitud **una sola vez** (con el mismo `X-Trace-Id`). Varias solicitudes
+  simultáneas comparten una sola renovación. Si la renovación falla, cierra la sesión y la app
+  vuelve al ingreso.
+- **Errores:** todo error se lanza como `ApiError` (`status`, `codigo`, `traceId`, `detalles`,
+  `datos`) con el mensaje traducido en español. La UI decide por `codigo`, nunca por el texto del
+  servidor. En fallas inesperadas, `error.mensajeUsuario` incluye el `traceId` para soporte.
+- **Reintentos con idempotencia:** con `idempotencyKey`, ante 502, 504 o fallo de red reintenta
+  (máx. 2 veces) con la **misma** clave. Se genera con `nuevoUuid()` una vez por intención del
+  usuario.
+
+```js
+import { http } from "../api/http.js";
+import { nuevoUuid } from "../api/httpClient.js";
+
+try {
+  await http.post("/ordenes", orden, { idempotencyKey: claveDeEstaIntencion });
+} catch (e) {
+  mostrarError(e.mensajeUsuario); // mensaje traducido; incluye el traceId si es inesperado
+}
+```
+
+Los mensajes están en `src/api/errorMessages.js` (los 24 códigos del catálogo del contrato) y una
+prueba falla si falta alguno.
+
+**Sesión:** el access token vive solo en memoria; el refresh token y el usuario, en
+`sessionStorage` (sobreviven a una recarga y se pierden al cerrar la pestaña).
+
+### Migrar los clientes de otras ramas
+
+`mercadosApi.js` y `portafolioApi.js` (SCRUM-23 y SCRUM-25) tienen su propio `fetch`. Para
+usar el cliente común, cambian `obtenerJson(ruta)` por `http.get(ruta)` y quitan el prefijo
+`/api/v1` de la ruta; así reciben token, trazabilidad, renovación y errores traducidos.
+
+## Servidor mock
+
+`src/mocks/` simula los endpoints de esta semana con [MSW](https://mswjs.io) y la forma exacta
+del contrato (éxito y error con `codigo` y `traceId`): autenticación (`registro`, `login`,
+`mfa/verificar`, `mfa/reenviar`, `refresh`, `logout`), perfil y preferencias, comisionistas,
+mercados (con estado abierto/cerrado calculado por hora real), acciones y cotización,
+`dashboard`, saldo y portafolio. Respeta roles (403 `ACCESO_DENEGADO`) y vence los tokens como el
+backend. Las pruebas usan los mismos handlers (`src/test/setup.js`).
+
+Para agregar un endpoint, añade su handler en `src/mocks/handlers.js` con `protegido(roles, ...)`.
+El archivo `public/mockServiceWorker.js` lo genera MSW (`npx msw init public/`); no se edita.
+
+## Calidad y CI
+
+`.github/workflows/ci.yml` ejecuta en cada push y en cada PR a `main`: **lint → build → pruebas**.
+Si cualquiera falla, el check queda en rojo. Para que además **bloquee el merge**, el repositorio
+debe tener una regla de protección de `main` que exija el check «Lint, build y pruebas»
+(Settings → Branches → Branch protection rules → _Require status checks to pass_).
+
+`format:check` no está en el CI todavía porque varios archivos previos no están formateados con
+Prettier; los archivos nuevos sí lo están.
+
+## Stack
+
+- React 18 + Vite · React Router 6
+- CSS Modules + variables CSS (design tokens) · Tipografía Manrope
+- Vitest + Testing Library · MSW · ESLint + Prettier
 
 ## Estructura
 
 ```
 src/
-├─ App.jsx                      # Raíz + router por hash; integración al API Gateway
-├─ main.jsx                     # Punto de entrada
-├─ data/
-│  ├─ dashboardData.js          # Datos del panel (forma del JSON del API)
-│  └─ investmentProfileData.js  # Catálogos del perfil de inversión
-├─ pages/
-│  ├─ DashboardPage.*           # Panel principal
-│  ├─ InvestmentProfilePage.*   # Perfil de inversión
-│  └─ VerificationPage.*        # Verificación OTP
-├─ components/
-│  ├─ layout/                   # Header, Stepper, Card
-│  ├─ sections/                 # Secciones del perfil de inversión
-│  ├─ dashboard/                # TopNav, KpiCards, PriceChartCard,
-│  │                            # MarketsCard, Watchlist, ActivityCard
-│  ├─ order/                    # OrderForm, OrderTypeSelector, OrderSummary,
-│  │                            # orderUtils (lógica de negocio)
-│  ├─ verification/             # BrandHero, OtpInput, VerificationForm
-│  └─ ui/                       # Primitivas: RadioCard, Chip, CheckboxCard, Icons
-└─ styles/
-   ├─ tokens.css                # Colores, tipografía, espaciados, radios
-   └─ global.css                # Reset y estilos base
+├─ api/          # httpClient (interceptores), http (instancia), ApiError, errorMessages, *Api.js
+├─ auth/         # session (tokens), AuthContext (login + MFA), roles
+├─ config/       # env.js (variables VITE_*)
+├─ layout/       # AppShell (marco de pantallas autenticadas)
+├─ mocks/        # servidor mock (MSW): db, handlers, browser, server
+├─ routes/       # routesConfig (rutas y roles), ProtectedRoute, AppRoutes
+├─ pages/        # Dashboard, Login, Verification, InvestmentProfile, StatusPage
+├─ components/   # layout, sections, dashboard, order, verification, ui
+├─ data/         # datos de ejemplo del panel y catálogos
+├─ theme/        # ThemeContext, ThemeSwitcher
+└─ styles/       # tokens.css, themes.css, global.css
 ```
 
-## Integración con el API Gateway
+## Temas de color (3 paletas, sin azules)
 
-Los componentes reciben todos sus datos vía **props**, por lo que están listos
-para consumir información del API Gateway (REST/JSON).
-
-El objeto `investmentProfileData` define la forma esperada de la respuesta.
-Para conectar el backend:
-
-```jsx
-// Carga de catálogos
-const res = await fetch("/api/onboarding/investment-profile");
-const data = await res.json();
-
-<InvestmentProfilePage data={data} onSubmit={enviarPerfil} onBack={volver} />
-```
-
-`onSubmit` recibe el perfil armado desde el estado del formulario:
-
-```js
-{
-  experienceLevel: "beginner",
-  markets: ["nyse", "nasdaq"],
-  sectors: ["tech"],
-  broker: "carlos",
-  notifications: ["email", "whatsapp"],
-  plan: "basic"
-}
-```
-
-## Temas de color (4 paletas)
-
-La app incluye 4 paletas intercambiables en tiempo real mediante un selector
-("Tema: …") presente en el panel, el perfil y la verificación:
+Paletas intercambiables en tiempo real con el selector «Tema: …»:
 
 1. **Esmeralda Tradicional** (por defecto)
 2. **Verde Neón**
-3. **Azul Cobalto**
-4. **Verde Bosque**
+3. **Verde Bosque**
 
-Implementación:
+- `styles/themes.css` — cada paleta redefine las mismas variables bajo `[data-theme="..."]`.
+- `theme/ThemeContext.jsx` — aplica `data-theme` en `<html>` y persiste la elección.
+- `theme/ThemeSwitcher.jsx` — selector con vista previa.
 
-- `styles/themes.css` — cada paleta redefine las mismas variables de color
-  bajo un selector `[data-theme="..."]`.
-- `theme/ThemeContext.jsx` — proveedor que aplica `data-theme` en `<html>` y
-  persiste la elección en `localStorage`.
-- `theme/ThemeSwitcher.jsx` — selector con vista previa de cada paleta.
-
-Los componentes no usan colores fijos: todos consumen las variables CSS
-(`--color-brand`, `--color-surface`, etc.), por lo que cambian de tema sin
-tocar su código. Para añadir una paleta nueva basta con agregar un bloque
+Los componentes no usan colores fijos: consumen variables CSS (`--color-brand`, `--color-surface`,
+etc.). El cliente pidió un diseño más moderno **sin azul**, por eso se retiró «Azul Cobalto» y los
+neutros pasaron de tonos azulados a tonos cálidos. Para añadir una paleta, agrega un bloque
 `[data-theme="..."]` en `themes.css` y una entrada en `THEMES`.
 
 ## Creación de órdenes (trading)
@@ -140,7 +202,7 @@ import OrderForm from "../components/order/OrderForm.jsx";
   saldoDisponible={4250.0}
   isMarketOpen={true}
   onSubmit={(order) => enviarOrden(order)}
-/>
+/>;
 ```
 
 `onSubmit` recibe el payload listo para el API:
@@ -168,32 +230,7 @@ El estado de los elementos del mockup se maneja con `useState` en
 - **Mercados**, **sectores** y **notificaciones**: multi-selección (toggle).
 - **Plan**: selección única.
 - **Crear cuenta y continuar**: dispara `onSubmit` con estado de carga.
+
 ```
 
-## Mi dinero y mis posiciones (SCRUM-25)
-
-Vista `#/portafolio` (`pages/PortafolioView.jsx`) que muestra el saldo del
-usuario, el resumen del portafolio y el detalle de posiciones, consumiendo la
-API del backend. Todos los montos llegan como texto con 2 decimales.
-
-Componentes (en `components/portafolio/`):
-
-- **SaldoWidget** — dinero disponible, reservado y total.
-- **PortafolioResumen** — valor total, costo invertido, ganancia/pérdida y rendimiento.
-- **PosicionesTable** — tabla con activo, cantidad, precio de compra, precio
-  actual, valor actual, G/P y porcentaje. Incluye estado de portafolio vacío.
-- **portafolioUtils** — funciones puras (`formatCurrency`, `formatPercent`,
-  `toneFromValue`) con pruebas en `portafolioUtils.test.js`.
-
-Servicio (`services/portafolioApi.js`) con `fetch` hacia los 3 endpoints:
-
-| Función                   | Endpoint                          |
-| ------------------------- | --------------------------------- |
-| `fetchSaldo`              | `GET /api/v1/cuenta/saldo`        |
-| `fetchResumenPortafolio`  | `GET /api/v1/portafolio`          |
-| `fetchPosiciones`         | `GET /api/v1/portafolio/posiciones` |
-
-La vista maneja estados de **carga**, **error** (con reintentar) y **portafolio
-vacío** (usuario nuevo). En desarrollo, `vite.config.js` hace proxy de `/api`
-hacia el backend en `http://localhost:8080`, así que basta con levantar primero
-el backend y luego `npm run dev`.
+```

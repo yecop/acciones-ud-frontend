@@ -9,22 +9,17 @@ export const THEMES = [
   {
     id: "esmeralda",
     label: "Esmeralda Tradicional",
-    swatch: ["#0a192f", "#10b981", "#1e293b", "#f8fafc"],
+    swatch: ["#0f1512", "#10b981", "#17211c", "#f6f5f1"],
   },
   {
     id: "neon",
     label: "Verde Neón",
-    swatch: ["#121212", "#00e676", "#212121", "#f4f6f8"],
-  },
-  {
-    id: "cobalto",
-    label: "Azul Cobalto",
-    swatch: ["#2563eb", "#16a34a", "#374151", "#f3f4f6"],
+    swatch: ["#121212", "#00e676", "#212121", "#f5f6f2"],
   },
   {
     id: "bosque",
     label: "Verde Bosque",
-    swatch: ["#0b4c2c", "#ffffff", "#d1fae5", "#f4f6f8"],
+    swatch: ["#0b4c2c", "#ffffff", "#d1fae5", "#f5f6f2"],
   },
 ];
 

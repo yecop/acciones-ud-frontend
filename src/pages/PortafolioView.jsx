@@ -38,7 +38,7 @@ export default function PortafolioView({ onNavigate }) {
       setSaldo(saldoData);
       setResumen(resumenData);
       setPosiciones(posicionesData);
-    } catch (e) {
+    } catch {
       setError(
         "No se pudieron cargar tus datos. Verifica que el backend esté disponible."
       );

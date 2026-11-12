@@ -141,3 +141,13 @@
   text-decoration: underline;
   font-family: var(--font-family);
 }
+
+.error {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-negative) 12%, var(--color-surface));
+  color: var(--color-negative);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}

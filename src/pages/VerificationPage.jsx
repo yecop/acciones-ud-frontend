@@ -16,6 +16,8 @@ import ThemeSwitcher from "../theme/ThemeSwitcher.jsx";
  * @param {function} [props.onVerify]
  * @param {function} [props.onResend]
  * @param {function} [props.onRegister]
+ * @param {string|null} [props.error]
+ * @param {boolean} [props.loading]
  */
 export default function VerificationPage({
   hero = {},
@@ -23,6 +25,8 @@ export default function VerificationPage({
   onVerify,
   onResend,
   onRegister,
+  error,
+  loading,
 }) {
   return (
     <div className={styles.page}>
@@ -35,6 +39,8 @@ export default function VerificationPage({
         onVerify={onVerify}
         onResend={onResend}
         onRegister={onRegister}
+        error={error}
+        loading={loading}
       />
     </div>
   );

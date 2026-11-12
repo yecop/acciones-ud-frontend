@@ -9,8 +9,9 @@ import ThemeSwitcher from "../../theme/ThemeSwitcher.jsx";
  * @param {Array<{id:string,label:string,active?:boolean}>} props.items
  * @param {object} props.user   { name, initials, role, notifications }
  * @param {function} [props.onNavigate] Recibe el id del item.
+ * @param {function} [props.onLogout]   Si se pasa, muestra el botón "Salir".
  */
-export default function TopNav({ items = [], user = {}, onNavigate }) {
+export default function TopNav({ items = [], user = {}, onNavigate, onLogout }) {
   return (
     <nav className={styles.nav} aria-label="Navegación principal">
       <div className={styles.brand}>
@@ -46,7 +47,28 @@ export default function TopNav({ items = [], user = {}, onNavigate }) {
             <p className={styles.userRole}>{user.role}</p>
           </div>
         </div>
+        {onLogout && (
+          <button type="button" className={styles.logout} onClick={onLogout}>
+            Salir
+          </button>
+        )}
       </div>
+
+      {/* Móvil: los enlaces del encabezado se ocultan y la navegación pasa a la barra inferior. */}
+      <ul className={styles.tabBar} aria-label="Secciones">
+        {items.map((item) => (
+          <li key={item.id}>
+            <button
+              type="button"
+              className={`${styles.tab} ${item.active ? styles.tabActive : ""}`}
+              aria-current={item.active ? "page" : undefined}
+              onClick={() => onNavigate?.(item.id)}
+            >
+              {item.label}
+            </button>
+          </li>
+        ))}
+      </ul>
     </nav>
   );
 }

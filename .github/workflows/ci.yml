@@ -8,9 +8,14 @@ on:
     branches:
       - main
 
+# Cancela ejecuciones anteriores de la misma rama cuando llega un commit nuevo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Lint & Unit Tests
+  ci:
+    name: Lint, build y pruebas
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,5 +30,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
         run: npm test

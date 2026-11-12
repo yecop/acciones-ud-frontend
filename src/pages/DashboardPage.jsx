@@ -23,6 +23,7 @@ import { dashboardData } from "../data/dashboardData.js";
  * @param {function} [props.onTrade]   Recibe el símbolo.
  * @param {function} [props.onNavigate]
  * @param {function} [props.onSubmitOrder] Recibe el payload de la orden creada.
+ * @param {function} [props.onLogout]
  */
 export default function DashboardPage({
   data = dashboardData,
@@ -30,10 +31,11 @@ export default function DashboardPage({
   onTrade,
   onNavigate,
   onSubmitOrder,
+  onLogout,
 }) {
   return (
     <div className={styles.page}>
-      <TopNav items={data.nav} user={data.user} onNavigate={onNavigate} />
+      <TopNav items={data.nav} user={data.user} onNavigate={onNavigate} onLogout={onLogout} />
 
       <main className={styles.main}>
         <div className={styles.greetingRow}>
