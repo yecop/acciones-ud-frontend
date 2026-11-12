@@ -8,7 +8,7 @@ import {
   db,
   MAX_FALLOS_LOGIN,
 } from "./db.js";
-import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
+import { ACCIONES, cotizacionDe, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
 
 /**
  * Endpoints simulados del contrato `/api/v1` (los de esta semana: autenticación, perfil,
@@ -468,7 +468,16 @@ export const handlers = [
     protegido(null, ({ request, params }) => {
       const mercado = MERCADOS.find((m) => m.codigo === params.codigo);
       if (!mercado) return error(request, 404, "NO_ENCONTRADO", "Mercado inexistente.");
-      return HttpResponse.json(estadoDeMercado(mercado));
+      const estado = estadoDeMercado(mercado);
+      const forzado = db.simulacion.mercadoAbierto[mercado.codigo];
+      if (forzado === undefined) return HttpResponse.json(estado);
+      return HttpResponse.json({
+        ...estado,
+        abierto: forzado,
+        estado: forzado ? "ABIERTO" : "CERRADO",
+        proximoCierre: forzado ? (estado.proximoCierre ?? estado.proximaApertura) : null,
+        proximaApertura: forzado ? null : (estado.proximaApertura ?? estado.proximoCierre),
+      });
     })
   ),
 
@@ -504,15 +513,16 @@ export const handlers = [
     protegido(null, ({ request, params }) => {
       const accion = ACCIONES.find((a) => a.ticker === params.ticker);
       if (!accion) return error(request, 404, "NO_ENCONTRADO", "Acción inexistente.");
-      return HttpResponse.json({
-        ticker: accion.ticker,
-        precio: monto(accion.precio),
-        bid: monto(accion.precio - 0.02),
-        ask: monto(accion.precio + 0.02),
-        spread: "0.04",
-        variacionPorcentaje: monto(accion.variacion),
-        actualizadoEn: new Date().toISOString(),
-      });
+      if (db.simulacion.proveedorCaido)
+        return error(
+          request,
+          502,
+          "PROVEEDOR_NO_DISPONIBLE",
+          "El proveedor de datos de mercado no responde."
+        );
+      return HttpResponse.json(
+        cotizacionDe(accion, { edadForzadaSegundos: db.simulacion.edades[accion.ticker] })
+      );
     })
   ),
 

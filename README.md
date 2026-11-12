@@ -150,6 +150,27 @@ Para agregar un módulo nuevo basta con importar `http` de `src/api/http.js`; no
 - Widget de mercados (`MercadosStatusWidget`) en el panel, con refresco periódico.
 - `/portafolio` (rol INVERSIONISTA) muestra saldo, resumen y posiciones dentro del marco común.
 
+## Dashboard de mercados y acciones (SCRUM-30)
+
+`PanelMercados` (en `/panel`) muestra, por mercado: estado abierto/cerrado con próxima apertura o
+cierre, y sus acciones con último precio, bid, ask, spread, variación y antigüedad del dato.
+
+- Datos: `useMercadosDashboard` pide `/mercados`, `/mercados/{c}/estado`, `/acciones` y
+  `/acciones/{t}/cotizacion` (6 a la vez) y `/perfil` para los intereses. Se refresca cada 30 s.
+- Intereses: las acciones cuyo sector está en `intereses.sectores` van primero, y los mercados de
+  `intereses.mercados` también. Si el perfil falla, se muestra todo sin ese orden.
+- LSE, TSE y ASX se marcan «Cierre diario» y «Ejecución simulada» (`src/mercados/reglas.js`).
+- Dato antiguo: con el mercado **abierto**, una cotización con más de 60 s (30 h en mercados de
+  cierre diario) muestra «Dato antiguo». Con el mercado cerrado se muestra «Último cierre».
+  Los umbrales son constantes en `src/mercados/reglas.js`.
+- Si el proveedor falla: un aviso global si fallan todas las cotizaciones, «Cotización no
+  disponible» en la fila si falla una, y un error con «Reintentar» si falla la lista de mercados
+  (se conservan los últimos datos cargados).
+
+Probar fallos desde la consola del navegador con `npm start`:
+`__mock.proveedorCaido()`, `__mock.datoAntiguo('AAPL', 600)` y `__mock.mercadoAbierto('NYSE')`
+(sin forzar, el estado depende de la hora real y la advertencia solo aplica con el mercado abierto).
+
 ## Servidor mock
 
 `src/mocks/` simula los endpoints de esta semana con [MSW](https://mswjs.io) y la forma exacta

@@ -21,6 +21,16 @@ function Inicio() {
   return <Navigate to={destino} replace />;
 }
 
+/** "Jueves 12 de noviembre", en el idioma y la zona horaria de la persona. */
+function fechaDeHoy() {
+  const texto = new Intl.DateTimeFormat("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 /** Panel del inversionista. SCRUM-30 reemplaza los datos de ejemplo por el API. */
 function RutaPanel() {
   const { usuario, rol, cerrarSesion } = useAuth();
@@ -36,7 +46,7 @@ function RutaPanel() {
         initials: nombre.slice(0, 2).toUpperCase(),
         role: ETIQUETA_ROL[rol],
       },
-      greeting: { ...dashboardData.greeting, title: `Hola, ${nombre}` },
+      greeting: { title: `Hola, ${nombre}`, subtitle: fechaDeHoy() },
     };
   }, [usuario, rol]);
 
