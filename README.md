@@ -9,6 +9,7 @@ diseño para un layout responsivo.
 | Ruta (hash)       | Pantalla                              |
 | ----------------- | ------------------------------------- |
 | `#/panel`         | Panel principal (dashboard de trading) |
+| `#/portafolio`    | Mi dinero y mis posiciones (SCRUM-25)  |
 | `#/perfil`        | Perfil de inversión (onboarding paso 2) |
 | `#/verificacion`  | Verificación en dos pasos (OTP)        |
 
@@ -168,3 +169,31 @@ El estado de los elementos del mockup se maneja con `useState` en
 - **Plan**: selección única.
 - **Crear cuenta y continuar**: dispara `onSubmit` con estado de carga.
 ```
+
+## Mi dinero y mis posiciones (SCRUM-25)
+
+Vista `#/portafolio` (`pages/PortafolioView.jsx`) que muestra el saldo del
+usuario, el resumen del portafolio y el detalle de posiciones, consumiendo la
+API del backend. Todos los montos llegan como texto con 2 decimales.
+
+Componentes (en `components/portafolio/`):
+
+- **SaldoWidget** — dinero disponible, reservado y total.
+- **PortafolioResumen** — valor total, costo invertido, ganancia/pérdida y rendimiento.
+- **PosicionesTable** — tabla con activo, cantidad, precio de compra, precio
+  actual, valor actual, G/P y porcentaje. Incluye estado de portafolio vacío.
+- **portafolioUtils** — funciones puras (`formatCurrency`, `formatPercent`,
+  `toneFromValue`) con pruebas en `portafolioUtils.test.js`.
+
+Servicio (`services/portafolioApi.js`) con `fetch` hacia los 3 endpoints:
+
+| Función                   | Endpoint                          |
+| ------------------------- | --------------------------------- |
+| `fetchSaldo`              | `GET /api/v1/cuenta/saldo`        |
+| `fetchResumenPortafolio`  | `GET /api/v1/portafolio`          |
+| `fetchPosiciones`         | `GET /api/v1/portafolio/posiciones` |
+
+La vista maneja estados de **carga**, **error** (con reintentar) y **portafolio
+vacío** (usuario nuevo). En desarrollo, `vite.config.js` hace proxy de `/api`
+hacia el backend en `http://localhost:8080`, así que basta con levantar primero
+el backend y luego `npm run dev`.
