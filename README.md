@@ -58,8 +58,8 @@ que pueden verla y de ahí salen tanto el router como el menú de cada rol.
 
 - Sin sesión → `#/ingreso` (recuerda a dónde quería ir).
 - Con sesión pero sin el rol → pantalla «No tienes acceso» (403).
-- Pantallas reales: ingreso (provisional hasta SCRUM-28), verificación MFA, registro (perfil de
-  inversión) y panel. El resto de rutas existen y están protegidas, con una pantalla
+- Pantallas reales: ingreso, verificación MFA, registro (datos personales y perfil de
+  inversión, SCRUM-27) y panel. El resto de rutas existen y están protegidas, con una pantalla
   «En construcción» que indica la tarea que las construye.
 - **Layout responsivo**: en escritorio, barra superior con el menú del rol; en móvil (≤ 860 px),
   barra de navegación inferior.
@@ -112,6 +112,12 @@ usar el cliente común, cambian `obtenerJson(ruta)` por `http.get(ruta)` y quita
 `/api/v1` de la ruta; así reciben token, trazabilidad, renovación y errores traducidos.
 
 ## Login, MFA y sesión
+
+El registro está en `#/registro`: valida datos personales, intereses, nivel, riesgo y objetivos;
+envía el formulario al cliente HTTP común y muestra errores por campo, correo duplicado y el
+estado pendiente de alta. El mock conserva el perfil y no habilita el ingreso de cuentas
+pendientes. Ver [docs/registro.md](docs/registro.md) para el cuerpo de la solicitud, escenarios
+de prueba y los campos que falta confirmar con el backend y el mockup.
 
 Flujo: `/ingreso` (credenciales) → `/verificacion` (código de 6 dígitos) → pantalla inicial del rol
 (o la ruta a la que se intentó entrar).

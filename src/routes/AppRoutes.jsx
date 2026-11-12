@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import AppShell from "../layout/AppShell.jsx";
 import DashboardPage from "../pages/DashboardPage.jsx";
-import InvestmentProfilePage from "../pages/InvestmentProfilePage.jsx";
+import RegistrationPage from "../pages/RegistrationPage.jsx";
 import LoginPage from "../pages/LoginPage.jsx";
 import StatusPage from "../pages/StatusPage.jsx";
 import MfaPage from "../pages/MfaPage.jsx";
@@ -17,20 +17,6 @@ function Inicio() {
   const { autenticado, rol } = useAuth();
   const destino = autenticado ? (RUTA_INICIAL_POR_ROL[rol] ?? RUTAS.sinAcceso) : RUTAS.ingreso;
   return <Navigate to={destino} replace />;
-}
-
-/** Perfil de inversión del registro. SCRUM-27 conecta `POST /auth/registro`. */
-function RutaRegistro() {
-  const navigate = useNavigate();
-  return (
-    <InvestmentProfilePage
-      onSubmit={(perfil) => {
-        console.info("Perfil de inversión (pendiente de SCRUM-27):", perfil);
-        navigate(RUTAS.ingreso);
-      }}
-      onBack={() => navigate(RUTAS.ingreso)}
-    />
-  );
 }
 
 /** Panel del inversionista. SCRUM-30 reemplaza los datos de ejemplo por el API. */
@@ -86,7 +72,7 @@ export default function AppRoutes() {
       {/* Públicas */}
       <Route path={RUTAS.ingreso} element={<LoginPage />} />
       <Route path={RUTAS.verificacion} element={<MfaPage />} />
-      <Route path={RUTAS.registro} element={<RutaRegistro />} />
+      <Route path={RUTAS.registro} element={<RegistrationPage />} />
       <Route
         path={RUTAS.sinAcceso}
         element={

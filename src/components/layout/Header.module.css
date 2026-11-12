@@ -40,6 +40,14 @@
 }
 
 @media (max-width: 520px) {
+  .header {
+    flex-wrap: wrap;
+  }
+  .actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: var(--space-3);
+  }
   .account {
     font-size: var(--font-size-sm);
   }

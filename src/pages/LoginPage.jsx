@@ -42,7 +42,11 @@ export default function LoginPage() {
       // `desde` viaja hasta la verificación para volver a la pantalla que se quería abrir.
       navigate(RUTAS.verificacion, { state: ubicacion.state });
     } catch (e) {
-      setError(e.mensajeUsuario ?? "No fue posible iniciar sesión.");
+      setError(
+        e.datos?.estado === "PENDIENTE_ALTA"
+          ? "Tu cuenta está pendiente de alta. Espera la confirmación antes de iniciar sesión."
+          : (e.mensajeUsuario ?? "No fue posible iniciar sesión.")
+      );
       if (e.codigo === "VALIDACION_FALLIDA") setFieldErrors(erroresPorCampo(e));
       if (e.status === 429) {
         const segundos = e.retryAfter ?? ESPERA_BLOQUEO_POR_DEFECTO_SEGUNDOS;
