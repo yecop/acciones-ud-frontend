@@ -81,7 +81,11 @@ export const db = {
   /** Contadores para inspeccionar el comportamiento en pruebas. */
   contadores: { refresh: 0 },
 
+  /** Fallos y datos viejos que se activan desde la consola (`window.__mock`). */
+  simulacion: { proveedorCaido: false, edades: {}, mercadoAbierto: {} },
+
   reiniciar() {
+    this.simulacion = { proveedorCaido: false, edades: {}, mercadoAbierto: {} };
     this.usuarios = usuariosIniciales();
     this.tokensAcceso.clear();
     this.tokensRefresh.clear();

@@ -3,8 +3,7 @@ import styles from "./DashboardPage.module.css";
 import TopNav from "../components/dashboard/TopNav.jsx";
 import KpiCards from "../components/dashboard/KpiCards.jsx";
 import PriceChartCard from "../components/dashboard/PriceChartCard.jsx";
-import MercadosStatusWidget from "../components/dashboard/MercadosStatusWidget.jsx";
-import Watchlist from "../components/dashboard/Watchlist.jsx";
+import PanelMercados from "../components/mercados/PanelMercados.jsx";
 import ActivityCard from "../components/dashboard/ActivityCard.jsx";
 import OrderForm from "../components/order/OrderForm.jsx";
 import { PlusIcon } from "../components/ui/Icons.jsx";
@@ -53,11 +52,6 @@ export default function DashboardPage({
         <div className={styles.columns}>
           <div className={styles.colLeft}>
             <PriceChartCard asset={data.featured} />
-            <Watchlist
-              sector={data.watchlist.sector}
-              rows={data.watchlist.rows}
-              onTrade={onTrade}
-            />
           </div>
 
           <div className={styles.colRight}>
@@ -67,12 +61,16 @@ export default function DashboardPage({
               isMarketOpen={data.trading.isMarketOpen}
               onSubmit={onSubmitOrder}
             />
-            <MercadosStatusWidget title="Estado de mercados" />
             <ActivityCard items={data.activity} />
           </div>
         </div>
 
-        <p className={styles.footerNote}>Datos de ejemplo para el mockup.</p>
+        <PanelMercados onTrade={onTrade} />
+
+        <p className={styles.footerNote}>
+          Mercados y acciones vienen del API. Los indicadores, el gráfico y la actividad son datos
+          de ejemplo.
+        </p>
       </main>
     </div>
   );

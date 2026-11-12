@@ -30,6 +30,10 @@
   --space-10: 56px;
 
   /* Radios */
+  --color-warning: #8a5a00;
+  --color-warning-soft: #fff3d6;
+  --color-warning-border: #e8c46a;
+
   --radius-sm: 10px;
   --radius-md: 18px;
   --radius-lg: 24px;
