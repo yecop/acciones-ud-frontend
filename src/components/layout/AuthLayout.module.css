@@ -1,0 +1,46 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.switcher {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  z-index: 10;
+}
+
+.hero {
+  display: flex;
+}
+
+.hero > * {
+  flex: 1;
+}
+
+.main {
+  display: flex;
+}
+
+.main > * {
+  flex: 1;
+}
+
+@media (max-width: 900px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
+  /* En móvil la persona viene a ingresar: la marca se reduce a su cabecera (logo y nombre)
+     y el formulario queda a la vista sin desplazarse. */
+  .hero > * > :not(:first-child) {
+    display: none;
+  }
+
+  .switcher {
+    top: var(--space-3);
+    right: var(--space-3);
+  }
+}

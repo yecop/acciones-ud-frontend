@@ -111,6 +111,20 @@ prueba falla si falta alguno.
 usar el cliente común, cambian `obtenerJson(ruta)` por `http.get(ruta)` y quitan el prefijo
 `/api/v1` de la ruta; así reciben token, trazabilidad, renovación y errores traducidos.
 
+## Login, MFA y sesión
+
+Flujo: `/ingreso` (credenciales) → `/verificacion` (código de 6 dígitos) → pantalla inicial del rol
+(o la ruta a la que se intentó entrar).
+
+- Páginas: `LoginPage` y `MfaPage` (lógica) con `LoginForm` y `VerificationForm` (presentación).
+- Estado: `AuthContext` (`iniciarSesion`, `verificarMfa`, `reenviarMfa`, `cerrarSesion`).
+- Constantes (espera de reenvío 30 s, bloqueo por defecto 60 s, largo del código) en `src/auth/mfaConfig.js`.
+- Mensajes: código inválido, vencido (se pide uno nuevo) y intentos excedidos (429 con cuenta regresiva).
+- «Salir» llama a `/auth/logout` y limpia la sesión aunque la llamada falle.
+- En el mock, 5 contraseñas incorrectas seguidas bloquean el login 30 s.
+- El reto MFA sobrevive a una recarga (`sessionStorage`).
+- Dónde guardar el refresh token: ver [docs/refresh-token-storage.md](docs/refresh-token-storage.md).
+
 ## Servidor mock
 
 `src/mocks/` simula los endpoints de esta semana con [MSW](https://mswjs.io) y la forma exacta
