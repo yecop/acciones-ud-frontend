@@ -22,6 +22,9 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: "./src/test/setup.js",
       css: true,
+      // Las pruebas de flujo completo (login, MFA, rutas) teclean con userEvent y pueden tardar
+      // más de los 5 s por defecto en equipos lentos o en el CI.
+      testTimeout: 20000,
       // fetch de Node exige URL absoluta: las pruebas apuntan a un origen ficticio que MSW intercepta.
       env: { VITE_API_BASE_URL: "http://localhost:3000" },
     },
