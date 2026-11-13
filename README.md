@@ -273,3 +273,7 @@ El estado de los elementos del mockup se maneja con `useState` en
 ```
 
 ```
+
+## Marca
+
+El logo aprobado por el cliente vive en `src/assets/marca/` (PNG con fondo transparente: `logo-horizontal`, `logo-completo`, `isotipo`) y se usa siempre a través del componente `src/components/marca/Logo.jsx`. Los íconos de la pestaña (`favicon-32.png`, `apple-touch-icon.png`) están en `public/`. El logo tiene tintas oscuras: sobre fondos oscuros va dentro de una placa clara (ver `BrandHero`).

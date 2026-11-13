@@ -1,5 +1,6 @@
 import styles from "./TopNav.module.css";
-import { LogoIcon, BellIcon } from "../ui/Icons.jsx";
+import { BellIcon } from "../ui/Icons.jsx";
+import Logo from "../marca/Logo.jsx";
 import ThemeSwitcher from "../../theme/ThemeSwitcher.jsx";
 
 /**
@@ -15,8 +16,7 @@ export default function TopNav({ items = [], user = {}, onNavigate, onLogout }) 
   return (
     <nav className={styles.nav} aria-label="Navegación principal">
       <div className={styles.brand}>
-        <LogoIcon />
-        <span className={styles.brandName}>Acciones UD</span>
+        <Logo alto={40} />
       </div>
 
       <ul className={styles.links}>
