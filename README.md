@@ -273,3 +273,7 @@ El estado de los elementos del mockup se maneja con `useState` en
 ```
 
 ```
+
+## Pruebas de extremo a extremo (Playwright)
+
+`npm run test:e2e` levanta la app en modo mock y recorre en un navegador real: login con MFA (errores, bloqueos, código vencido), rutas protegidas, cierre de sesión, renovación del token y portafolio, en escritorio y móvil. La primera vez ejecuta `npx playwright install chromium`. Si ya tienes Chrome, define `PW_CHROMIUM_PATH` con su ruta. Las pruebas unitarias (`npm test`) no incluyen la carpeta `e2e/`.
