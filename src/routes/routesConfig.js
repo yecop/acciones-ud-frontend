@@ -27,7 +27,6 @@ export const RUTAS_PROTEGIDAS = [
     path: "/portafolio",
     titulo: "Portafolio y órdenes",
     roles: [ROLES.INV],
-    pendiente: "SCRUM-31",
   },
   {
     id: "perfil",

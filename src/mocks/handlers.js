@@ -123,14 +123,14 @@ function vistaPerfil(usuario) {
 
 const POSICIONES = [
   { activo: "AAPL", cantidad: 10, precioCompra: 170.0 },
-  { activo: "MSFT", cantidad: 5, precioCompra: 320.0 },
+  { activo: "MSFT", cantidad: 5, precioCompra: 500.0 },
   { activo: "NVDA", cantidad: 12, precioCompra: 105.5 },
   { activo: "XOM", cantidad: 8, precioCompra: 108.0 },
   { activo: "TSLA", cantidad: 3, precioCompra: 265.0 },
 ];
 
-function posicionesValoradas() {
-  return POSICIONES.map((p) => {
+function posicionesValoradas(usuario) {
+  return (usuario?.cuentaVacia ? [] : POSICIONES).map((p) => {
     const precioActual = ACCIONES.find((a) => a.ticker === p.activo).precio;
     const costo = p.cantidad * p.precioCompra;
     const valor = p.cantidad * precioActual;
@@ -148,15 +148,15 @@ function posicionesValoradas() {
   });
 }
 
-function resumenPortafolio() {
-  const posiciones = posicionesValoradas();
+function resumenPortafolio(usuario) {
+  const posiciones = posicionesValoradas(usuario);
   const costo = posiciones.reduce((s, p) => s + p._costo, 0);
   const valor = posiciones.reduce((s, p) => s + p._valor, 0);
   return {
     valorTotal: monto(valor),
     costoTotal: monto(costo),
     gananciaPerdidaTotal: monto(valor - costo),
-    porcentajeGananciaPerdidaTotal: monto(((valor - costo) / costo) * 100),
+    porcentajeGananciaPerdidaTotal: monto(costo ? ((valor - costo) / costo) * 100 : 0),
     numeroPosiciones: posiciones.length,
   };
 }
@@ -230,6 +230,7 @@ export const handlers = [
         perfilRiesgo,
         objetivos,
         estado: "PENDIENTE_ALTA",
+        cuentaVacia: true,
         rol: "INVERSIONISTA",
         comisionista: null,
       };
@@ -518,7 +519,7 @@ export const handlers = [
 
   rest.get(
     `${RAIZ}/dashboard`,
-    protegido(INV, () =>
+    protegido(INV, ({ usuario }) =>
       HttpResponse.json({
         accionesInteres: ACCIONES.slice(0, 5).map((a) => ({
           ticker: a.ticker,
@@ -528,8 +529,8 @@ export const handlers = [
           variacionPorcentaje: monto(a.variacion),
         })),
         portafolio: {
-          valorTotal: resumenPortafolio().valorTotal,
-          numeroPosiciones: POSICIONES.length,
+          valorTotal: resumenPortafolio(usuario).valorTotal,
+          numeroPosiciones: usuario.cuentaVacia ? 0 : POSICIONES.length,
           gananciaPerdidaDia: "96.30",
         },
         alertas: [],
@@ -540,20 +541,24 @@ export const handlers = [
   // ---- Cuenta y portafolio -------------------------------------------------
   rest.get(
     `${RAIZ}/cuenta/saldo`,
-    protegido(INV, () =>
-      HttpResponse.json({ disponible: "4250.00", reservado: "351.20", total: "4601.20" })
+    protegido(INV, ({ usuario }) =>
+      HttpResponse.json(
+        usuario.cuentaVacia
+          ? { disponible: "0.00", reservado: "0.00", total: "0.00" }
+          : { disponible: "4250.00", reservado: "351.20", total: "4601.20" }
+      )
     )
   ),
 
   rest.get(
     `${RAIZ}/portafolio`,
-    protegido(INV, () => HttpResponse.json(resumenPortafolio()))
+    protegido(INV, ({ usuario }) => HttpResponse.json(resumenPortafolio(usuario)))
   ),
 
   rest.get(
     `${RAIZ}/portafolio/posiciones`,
-    protegido(INV, () =>
-      HttpResponse.json(posicionesValoradas().map(({ _costo, _valor, ...p }) => p))
+    protegido(INV, ({ usuario }) =>
+      HttpResponse.json(posicionesValoradas(usuario).map(({ _costo, _valor, ...p }) => p))
     )
   ),
 ];

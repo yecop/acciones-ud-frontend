@@ -4,9 +4,10 @@
 }
 
 .main {
+  min-width: 0;
   max-width: var(--layout-max-width);
   margin: 0 auto;
-  padding: clamp(var(--space-6), 3vw, 48px) clamp(var(--space-5), 3vw, 48px);
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: clamp(var(--space-5), 2vw, 32px);
@@ -39,8 +40,8 @@
   gap: var(--space-2);
   border: none;
   border-radius: var(--radius-md);
-  background: var(--color-brand);
-  color: var(--color-text-on-brand);
+  background: var(--color-brand-hero);
+  color: var(--color-surface);
   padding: var(--space-4) var(--space-5);
   font-family: var(--font-family);
   font-size: var(--font-size-md);
@@ -85,10 +86,22 @@
 }
 
 .columns {
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
   gap: clamp(var(--space-5), 2vw, 32px);
   align-items: start;
+}
+
+.main button:focus-visible,
+.main a:focus-visible {
+  outline: 3px solid var(--color-brand-hero);
+  outline-offset: 3px;
+}
+.banner {
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+  color: color-mix(in srgb, var(--color-negative) 65%, var(--color-text));
 }
 
 @media (max-width: 1040px) {

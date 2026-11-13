@@ -48,6 +48,15 @@ function usuariosIniciales() {
     base("5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e03", "admin@correo.com", "Admin", "ADMINISTRADOR"),
     base("5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e04", "legal@correo.com", "Legal", "LEGAL"),
     base("5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e05", "junta@correo.com", "Junta", "JUNTA_DIRECTIVA"),
+    {
+      ...base(
+        "5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e06",
+        "nuevo@correo.com",
+        "Nuevo inversionista",
+        "INVERSIONISTA"
+      ),
+      cuentaVacia: true,
+    },
   ];
 }
 

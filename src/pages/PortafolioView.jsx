@@ -1,100 +1,91 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import styles from "./PortafolioView.module.css";
-
-import TopNav from "../components/dashboard/TopNav.jsx";
 import SaldoWidget from "../components/portafolio/SaldoWidget.jsx";
 import PortafolioResumen from "../components/portafolio/PortafolioResumen.jsx";
 import PosicionesTable from "../components/portafolio/PosicionesTable.jsx";
-
+import PosicionesCards from "../components/portafolio/PosicionesCards.jsx";
 import { fetchSaldo, fetchResumenPortafolio, fetchPosiciones } from "../services/portafolioApi.js";
-import { dashboardData } from "../data/dashboardData.js";
+import { obtenerPreferencias } from "../api/perfilApi.js";
+import { useTheme } from "../theme/ThemeContext.jsx";
 
-/**
- * Vista de "Mi dinero y mis posiciones" (SCRUM-25).
- *
- * Carga en paralelo el saldo, el resumen del portafolio y las posiciones desde
- * el backend, manejando estados de carga, error y portafolio vacío.
- *
- * @param {object} props
- * @param {function} [props.onNavigate] Navegación del TopNav.
- */
-export default function PortafolioView({ onNavigate }) {
-  const [saldo, setSaldo] = useState(null);
-  const [resumen, setResumen] = useState(null);
-  const [posiciones, setPosiciones] = useState(null);
-
+export default function PortafolioView() {
+  const [datos, setDatos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const cargarDatos = useCallback(async () => {
+  const [intento, setIntento] = useState(0);
+  const { setTheme, themes } = useTheme();
+  useEffect(() => {
+    let activo = true;
     setLoading(true);
     setError(null);
-    try {
-      const [saldoData, resumenData, posicionesData] = await Promise.all([
-        fetchSaldo(),
-        fetchResumenPortafolio(),
-        fetchPosiciones(),
-      ]);
-      setSaldo(saldoData);
-      setResumen(resumenData);
-      setPosiciones(posicionesData);
-    } catch {
-      setError(
-        "No se pudieron cargar tus datos. Verifica que el backend esté disponible."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
-
-  // Marca "Portafolio y órdenes" como activo en la navegación.
-  const nav = dashboardData.nav.map((item) => ({
-    ...item,
-    active: item.id === "portafolio",
-  }));
-
+    setDatos(null);
+    Promise.all([fetchSaldo(), fetchResumenPortafolio(), fetchPosiciones(), obtenerPreferencias()])
+      .then(([saldo, resumen, posiciones, preferencias]) => {
+        if (!activo) return;
+        const vista = preferencias.visualizacion?.portafolio ?? "TABLA";
+        if (!["TABLA", "TARJETAS"].includes(vista))
+          throw new Error(
+            "No podemos mostrar la vista guardada. Revisa tus preferencias en Perfil."
+          );
+        if (!Array.isArray(posiciones) || !saldo || !resumen)
+          throw new Error("La respuesta del portafolio no es válida.");
+        if (themes.some((t) => t.id === preferencias.visualizacion?.tema))
+          setTheme(preferencias.visualizacion.tema);
+        setDatos({ saldo, resumen, posiciones, vista });
+      })
+      .catch((e) => {
+        if (activo) setError(e.mensajeUsuario ?? e.message ?? "No pudimos cargar tu cuenta.");
+      })
+      .finally(() => {
+        if (activo) setLoading(false);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [intento, setTheme, themes]);
   return (
-    <div className={styles.page}>
-      <TopNav items={nav} user={dashboardData.user} onNavigate={onNavigate} />
-
-      <main className={styles.main}>
-        <div className={styles.headingRow}>
-          <div>
-            <h1 className={styles.heading}>Mi dinero y mis posiciones</h1>
-            <p className={styles.subheading}>
-              Consulta tu saldo, el valor de tu portafolio y el detalle de cada activo.
-            </p>
-          </div>
-          <button
-            type="button"
-            className={styles.refresh}
-            onClick={cargarDatos}
-            disabled={loading}
-          >
-            {loading ? "Actualizando…" : "Actualizar"}
+    <div className={styles.main}>
+      <div className={styles.headingRow}>
+        <div>
+          <h1 className={styles.heading}>Mi dinero y mis posiciones</h1>
+          <p className={styles.subheading}>Consulta tu saldo y el detalle de cada activo.</p>
+        </div>
+        <button
+          type="button"
+          className={styles.refresh}
+          onClick={() => setIntento((i) => i + 1)}
+          disabled={loading}
+        >
+          {loading ? "Actualizando…" : "Actualizar"}
+        </button>
+      </div>
+      {loading && <p role="status">Cargando saldo y portafolio…</p>}
+      {error && (
+        <div className={styles.banner} role="alert">
+          <span>{error}</span>
+          <button type="button" className={styles.retry} onClick={() => setIntento((i) => i + 1)}>
+            Reintentar
           </button>
         </div>
-
-        {error && (
-          <div className={styles.banner} role="alert">
-            <span>{error}</span>
-            <button type="button" className={styles.retry} onClick={cargarDatos}>
-              Reintentar
-            </button>
+      )}
+      {datos && !loading && !error && (
+        <>
+          <div className={styles.columns}>
+            <SaldoWidget saldo={datos.saldo} />
+            <PortafolioResumen resumen={datos.resumen} />
           </div>
-        )}
-
-        <div className={styles.columns}>
-          <SaldoWidget saldo={saldo} loading={loading} error={error} />
-          <PortafolioResumen resumen={resumen} loading={loading} error={error} />
-        </div>
-
-        <PosicionesTable posiciones={posiciones} loading={loading} error={error} />
-      </main>
+          <p className={styles.subheading}>
+            Vista guardada: {datos.vista === "TARJETAS" ? "Tarjetas" : "Tabla"}.{" "}
+            <Link to="/perfil">Cambiar en Perfil</Link>
+          </p>
+          {datos.vista === "TARJETAS" && datos.posiciones.length ? (
+            <PosicionesCards posiciones={datos.posiciones} />
+          ) : (
+            <PosicionesTable posiciones={datos.posiciones} />
+          )}
+        </>
+      )}
     </div>
   );
 }
