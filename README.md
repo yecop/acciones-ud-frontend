@@ -111,6 +111,14 @@ prueba falla si falta alguno.
 usar el cliente común, cambian `obtenerJson(ruta)` por `http.get(ruta)` y quitan el prefijo
 `/api/v1` de la ruta; así reciben token, trazabilidad, renovación y errores traducidos.
 
+## Saldo y portafolio (SCRUM-30)
+
+En `#/portafolio`, el inversionista puede consultar saldo disponible y reservado, resumen y
+posiciones con ganancia/pérdida y rendimiento porcentual. Se reutilizan los componentes de
+SCRUM-25 y se aplica la vista Tabla/Tarjetas guardada en Perfil. La cuenta mock `nuevo@correo.com`
+permite comprobar el portafolio vacío; usa `Demo1234` y MFA `482913`, como Laura.
+Ver [docs/saldo-portafolio.md](docs/saldo-portafolio.md) para escenarios, API y alcance.
+
 ## Perfil y preferencias (SCRUM-29)
 
 En `#/perfil`, los usuarios autenticados pueden editar nombre y celular. El inversionista
