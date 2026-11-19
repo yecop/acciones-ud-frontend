@@ -8,6 +8,7 @@ import StatusPage from "../pages/StatusPage.jsx";
 import MfaPage from "../pages/MfaPage.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import PortafolioView from "../pages/PortafolioView.jsx";
+import AccionesPage from "../pages/AccionesPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
 import { dashboardData } from "../data/dashboardData.js";
@@ -56,7 +57,11 @@ function RutaPanel() {
 }
 
 /** Pantallas ya construidas dentro del marco común, por id de ruta. */
-const PANTALLAS = { perfil: <ProfilePage />, portafolio: <PortafolioView /> };
+const PANTALLAS = {
+  perfil: <ProfilePage />,
+  portafolio: <PortafolioView />,
+  acciones: <AccionesPage />,
+};
 
 function PaginaPendiente({ ruta }) {
   return (
