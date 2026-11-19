@@ -55,6 +55,9 @@ function RutaPanel() {
   );
 }
 
+/** Pantallas ya construidas dentro del marco común, por id de ruta. */
+const PANTALLAS = { perfil: <ProfilePage />, portafolio: <PortafolioView /> };
+
 function PaginaPendiente({ ruta }) {
   return (
     <StatusPage
@@ -99,15 +102,7 @@ export default function AppRoutes() {
             <Route key={ruta.id} element={<ProtectedRoute roles={ruta.roles} />}>
               <Route
                 path={ruta.path}
-                element={
-                  ruta.id === "perfil" ? (
-                    <ProfilePage />
-                  ) : ruta.id === "portafolio" ? (
-                    <PortafolioView />
-                  ) : (
-                    <PaginaPendiente ruta={ruta} />
-                  )
-                }
+                element={PANTALLAS[ruta.id] ?? <PaginaPendiente ruta={ruta} />}
               />
             </Route>
           ))}

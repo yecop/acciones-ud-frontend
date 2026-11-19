@@ -5,7 +5,7 @@ import SaldoWidget from "../components/portafolio/SaldoWidget.jsx";
 import PortafolioResumen from "../components/portafolio/PortafolioResumen.jsx";
 import PosicionesTable from "../components/portafolio/PosicionesTable.jsx";
 import PosicionesCards from "../components/portafolio/PosicionesCards.jsx";
-import { fetchSaldo, fetchResumenPortafolio, fetchPosiciones } from "../services/portafolioApi.js";
+import { obtenerSaldo, obtenerResumenPortafolio, listarPosiciones } from "../api/portafolioApi.js";
 import { obtenerPreferencias } from "../api/perfilApi.js";
 import { useTheme } from "../theme/ThemeContext.jsx";
 
@@ -20,7 +20,12 @@ export default function PortafolioView() {
     setLoading(true);
     setError(null);
     setDatos(null);
-    Promise.all([fetchSaldo(), fetchResumenPortafolio(), fetchPosiciones(), obtenerPreferencias()])
+    Promise.all([
+      obtenerSaldo(),
+      obtenerResumenPortafolio(),
+      listarPosiciones(),
+      obtenerPreferencias(),
+    ])
       .then(([saldo, resumen, posiciones, preferencias]) => {
         if (!activo) return;
         const vista = preferencias.visualizacion?.portafolio ?? "TABLA";

@@ -1,10 +1,10 @@
-# SCRUM-30: saldo y portafolio
+# SCRUM-31: saldo y portafolio
 
 `#/portafolio` está protegida para inversionistas y reutiliza los componentes de SCRUM-25 dentro de `AppShell`. No añade otra barra de navegación ni usa datos de una identidad fija. El panel principal conserva su presentación existente.
 
 ## API
 
-`src/services/portafolioApi.js` conserva sus exportaciones originales pero usa el cliente HTTP común para GET `/cuenta/saldo`, `/portafolio` y `/portafolio/posiciones`: sesión autenticada, renovación de token y errores traducidos. No usa `X-Usuario-Id: usuario-demo` ni un `fetch` independiente.
+`src/api/portafolioApi.js` conserva la migración del equipo y usa el cliente HTTP común para GET `/cuenta/saldo`, `/portafolio` y `/portafolio/posiciones`: sesión autenticada, renovación de token y errores traducidos. No usa `X-Usuario-Id: usuario-demo` ni un `fetch` independiente.
 
 La pantalla consulta también GET `/perfil/preferencias`. `visualizacion.portafolio` selecciona TABLA o TARJETAS; se aplica el tema guardado y se conservan las mismas cifras en ambas vistas. El enlace «Cambiar en Perfil» permite guardar otra vista y volver desde el menú. Al recargar o pulsar Actualizar se consulta otra vez la API. Una preferencia ausente usa TABLA por compatibilidad; una vista desconocida o un fallo al consultar preferencias se informa y permite reintentar, sin afirmar que se respetó una configuración que no se pudo leer.
 

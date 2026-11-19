@@ -6,7 +6,16 @@ import { session } from "../auth/session.js";
 
 // Servidor mock de la API para todas las pruebas. Las pruebas que no hacen peticiones
 // reales (p. ej. las que usan vi.mock) no se ven afectadas.
-beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: "warn" });
+
+  // jsdom reemplaza AbortController/AbortSignal, y desde Node 24 `fetch` rechaza esas señales
+  // ("Expected signal to be an instance of AbortSignal"). Solo ocurre en las pruebas: en el
+  // navegador la señal es nativa. Se quita la señal de jsdom antes de llegar a `fetch`.
+  const fetchOriginal = globalThis.fetch;
+  globalThis.fetch = (entrada, opciones) =>
+    fetchOriginal(entrada, opciones?.signal ? { ...opciones, signal: undefined } : opciones);
+});
 
 afterEach(() => {
   server.resetHandlers();
