@@ -14,12 +14,6 @@
   color: var(--color-brand);
 }
 
-.brandName {
-  font-size: 1.4rem;
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
-
 .links {
   display: flex;
   align-items: center;
