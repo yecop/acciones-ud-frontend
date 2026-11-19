@@ -59,7 +59,8 @@ que pueden verla y de ahí salen tanto el router como el menú de cada rol.
 - Sin sesión → `#/ingreso` (recuerda a dónde quería ir).
 - Con sesión pero sin el rol → pantalla «No tienes acceso» (403).
 - Pantallas reales: ingreso, verificación MFA, registro (datos personales y perfil de
-  inversión, SCRUM-27) y panel. El resto de rutas existen y están protegidas, con una pantalla
+  inversión, SCRUM-27), panel, perfil, portafolio y acciones (SCRUM-24). El resto de rutas
+  existen y están protegidas, con una pantalla
   «En construcción» que indica la tarea que las construye.
 - **Layout responsivo**: en escritorio, barra superior con el menú del rol; en móvil (≤ 860 px),
   barra de navegación inferior.
@@ -149,6 +150,24 @@ Para agregar un módulo nuevo basta con importar `http` de `src/api/http.js`; no
 
 - Widget de mercados (`MercadosStatusWidget`) en el panel, con refresco periódico.
 - `/portafolio` (rol INVERSIONISTA) muestra saldo, resumen y posiciones dentro del marco común.
+
+## Acciones y cotizaciones (SCRUM-24)
+
+`#/acciones` (roles INVERSIONISTA y COMISIONISTA) lista las acciones de las cinco bolsas con
+filtros (mercado, sector, texto) y paginación, y muestra el detalle de la cotización
+seleccionada: precio, bid, ask, spread, volumen, fuente y `actualizadoEn`.
+
+- Servicio: `src/api/cotizacionesApi.js` (`CotizacionesService`): `GET /acciones`,
+  `GET /acciones/{ticker}` y `GET /acciones/{ticker}/cotizacion`. El backend responde siempre
+  desde su caché; el frontend nunca consulta a Alpaca ni a otros proveedores.
+- Hooks: `useAcciones` (refresco cada 15 s), `useCotizacion` (cada 5 s) y `useAhora` (reloj
+  local cada segundo).
+- **Advertencia de antigüedad** (`src/utils/antiguedad.js`): se compara `actualizadoEn` con la
+  hora local. Si supera el umbral de su mercado (`umbralAntiguedadSegundos` del backend: 15 s en
+  NYSE/NASDAQ, 30 min por defecto en LSE/TSE/ASX) se resalta en ámbar; si el backend avisa
+  `PROVEEDOR_NO_DISPONIBLE`, en rojo con el último dato disponible.
+- Si nunca hubo dato, el backend responde 502 `PROVEEDOR_NO_DISPONIBLE` y el detalle lo explica.
+- En el mock (`npm start`), SHEL, 7203 y BHP vienen con dato viejo para ver la advertencia.
 
 ## Servidor mock
 
@@ -273,6 +292,10 @@ El estado de los elementos del mockup se maneja con `useState` en
 ```
 
 ```
+
+## Marca
+
+El logo aprobado por el cliente vive en `src/assets/marca/` (PNG con fondo transparente: `logo-horizontal`, `logo-completo`, `isotipo`) y se usa siempre a través del componente `src/components/marca/Logo.jsx`. Los íconos de la pestaña (`favicon-32.png`, `apple-touch-icon.png`) están en `public/`. El logo tiene tintas oscuras: sobre fondos oscuros va dentro de una placa clara (ver `BrandHero`).
 
 ## Pruebas de extremo a extremo (Playwright)
 

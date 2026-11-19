@@ -1,18 +1,17 @@
 import styles from "./BrandHero.module.css";
-import { LogoIcon, CheckIcon } from "../ui/Icons.jsx";
+import { CheckIcon } from "../ui/Icons.jsx";
+import Logo from "../marca/Logo.jsx";
 
 /**
  * Panel de marca (columna izquierda) de la pantalla de verificación.
  *
  * @param {object} props
- * @param {string} [props.brandName]
  * @param {string[]} [props.titleLines]  Líneas del titular principal.
  * @param {string} [props.subtitle]
  * @param {string[]} [props.features]     Lista de beneficios con check.
  * @param {string[]} [props.markets]      Etiquetas de mercados.
  */
 export default function BrandHero({
-  brandName = "Acciones UD",
   titleLines = ["Opera en los mercados", "del mundo, con cada", "movimiento a la vista."],
   subtitle = "Day trading en NYSE, NASDAQ, Londres, Tokio y Sídney, con comisionistas que te asesoran cuando lo necesitas.",
   features = [
@@ -25,8 +24,7 @@ export default function BrandHero({
   return (
     <aside className={styles.hero}>
       <div className={styles.brand}>
-        <LogoIcon size={44} />
-        <span className={styles.brandName}>{brandName}</span>
+        <Logo variante="horizontal" alto={44} />
       </div>
 
       <div className={styles.content}>
