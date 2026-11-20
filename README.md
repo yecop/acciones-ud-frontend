@@ -296,3 +296,7 @@ El estado de los elementos del mockup se maneja con `useState` en
 ## Marca
 
 El logo aprobado por el cliente vive en `src/assets/marca/` (PNG con fondo transparente: `logo-horizontal`, `logo-completo`, `isotipo`) y se usa siempre a través del componente `src/components/marca/Logo.jsx`. Los íconos de la pestaña (`favicon-32.png`, `apple-touch-icon.png`) están en `public/`. El logo tiene tintas oscuras: sobre fondos oscuros va dentro de una placa clara (ver `BrandHero`).
+
+## Pruebas de extremo a extremo (Playwright)
+
+`npm run test:e2e` levanta la app en modo mock y recorre en un navegador real: login con MFA (errores, bloqueos, código vencido), rutas protegidas, cierre de sesión, renovación del token y portafolio, en escritorio y móvil. La primera vez ejecuta `npx playwright install chromium`. Si ya tienes Chrome, define `PW_CHROMIUM_PATH` con su ruta. Las pruebas unitarias (`npm test`) no incluyen la carpeta `e2e/`.

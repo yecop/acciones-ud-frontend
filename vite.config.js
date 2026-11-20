@@ -22,6 +22,8 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: "./src/test/setup.js",
       css: true,
+      // Las pruebas de extremo a extremo (e2e/) las corre Playwright, no Vitest.
+      include: ["src/**/*.{test,spec}.{js,jsx}"],
       // Las pruebas de flujo completo (login, MFA, rutas) teclean con userEvent y pueden tardar
       // más de los 5 s por defecto en equipos lentos o en el CI.
       testTimeout: 20000,

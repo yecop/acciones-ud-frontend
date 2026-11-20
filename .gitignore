@@ -17,3 +17,7 @@ yarn-error.log*
 
 # Variables de entorno locales (no se versionan; .env.example y .env.mock si)
 .env
+
+# Playwright
+test-results/
+playwright-report/
