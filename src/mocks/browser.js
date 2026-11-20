@@ -27,12 +27,25 @@ export async function iniciarMock() {
     /** Cuántas veces se renovó el token desde que cargó la página. */
     renovaciones: () => db.contadores.refresh,
     reiniciar: () => db.reiniciar(),
+    /** Las cotizaciones responden 502 PROVEEDOR_NO_DISPONIBLE (true) o vuelven a la normalidad. */
+    proveedorCaido: (caido = true) => {
+      db.simulacion.proveedorCaido = caido;
+    },
+    /** Fuerza que un mercado figure abierto (true) o cerrado (false); `null` vuelve al horario real. */
+    mercadoAbierto: (codigo, abierto = true) => {
+      if (abierto === null) delete db.simulacion.mercadoAbierto[codigo];
+      else db.simulacion.mercadoAbierto[codigo] = abierto;
+    },
+    /** Hace que la cotización de `ticker` tenga `segundos` de antigüedad (dato antiguo). */
+    datoAntiguo: (ticker, segundos = 600) => {
+      db.simulacion.edades[ticker] = segundos;
+    },
   };
 
   console.info(
     "[mock] Servidor simulado activo.\n" +
       `  Cuentas: laura@ (INV), carlos@ (COM), admin@ (ADM), legal@ (LEG), junta@ (JD) + correo.com\n` +
       `  Contraseña: ${CONTRASENA_DEMO} · Código MFA: ${CODIGO_MFA_VALIDO}\n` +
-      "  Consola: window.__mock.expirarToken()"
+      "  Consola: window.__mock.expirarToken() · proveedorCaido() · datoAntiguo('AAPL', 600) · mercadoAbierto('NYSE')"
   );
 }

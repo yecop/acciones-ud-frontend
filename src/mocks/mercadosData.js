@@ -107,6 +107,50 @@ export function estadoDeMercado(mercado, ahora = new Date()) {
   };
 }
 
+/**
+ * Último cierre del mercado antes de `ahora` (instante ISO). Retrocede en pasos de 5 minutos
+ * hasta encontrar el paso en que el mercado pasó de abierto a cerrado (máx. 8 días).
+ */
+export function ultimoCierre(mercado, ahora = new Date()) {
+  let t = Math.floor(ahora.getTime() / PASO_MS) * PASO_MS;
+  for (let i = 0; i < (8 * 24 * 60) / 5; i += 1, t -= PASO_MS) {
+    if (!estaAbierto(mercado, new Date(t)) && estaAbierto(mercado, new Date(t - PASO_MS))) {
+      return new Date(t).toISOString();
+    }
+  }
+  return null;
+}
+
+/** Mercados de cierre diario: su cotización es siempre el cierre del día hábil anterior. */
+const CIERRE_DIARIO = new Set(["LSE", "TSE", "ASX"]);
+
+/**
+ * Cotización con la forma de `GET /acciones/{ticker}/cotizacion`. `actualizadoEn` imita al
+ * proveedor: unos segundos atrás con el mercado abierto y en vivo; el último cierre cuando el
+ * mercado está cerrado o es de cierre diario. `edadForzadaSegundos` permite simular datos viejos.
+ */
+export function cotizacionDe(accion, { ahora = new Date(), edadForzadaSegundos } = {}) {
+  const mercado = MERCADOS.find((m) => m.codigo === accion.mercado);
+  let actualizadoEn;
+  if (edadForzadaSegundos !== undefined) {
+    actualizadoEn = new Date(ahora.getTime() - edadForzadaSegundos * 1000).toISOString();
+  } else if (!estaAbierto(mercado, ahora) || CIERRE_DIARIO.has(mercado.codigo)) {
+    actualizadoEn = ultimoCierre(mercado, ahora) ?? ahora.toISOString();
+  } else {
+    const jitter = (accion.ticker.charCodeAt(0) % 7) + 2;
+    actualizadoEn = new Date(ahora.getTime() - jitter * 1000).toISOString();
+  }
+  return {
+    ticker: accion.ticker,
+    precio: monto(accion.precio),
+    bid: monto(accion.precio - 0.02),
+    ask: monto(accion.precio + 0.02),
+    spread: "0.04",
+    variacionPorcentaje: monto(accion.variacion),
+    actualizadoEn,
+  };
+}
+
 export const ACCIONES = [
   {
     ticker: "AAPL",
@@ -120,7 +164,7 @@ export const ACCIONES = [
   {
     ticker: "MSFT",
     nombre: "Microsoft Corp.",
-    mercado: "NYSE",
+    mercado: "NASDAQ",
     sector: "TECNOLOGIA",
     moneda: "USD",
     precio: 335.0,
@@ -138,7 +182,7 @@ export const ACCIONES = [
   {
     ticker: "NVDA",
     nombre: "NVIDIA Corp.",
-    mercado: "NYSE",
+    mercado: "NASDAQ",
     sector: "TECNOLOGIA",
     moneda: "USD",
     precio: 118.4,
@@ -147,7 +191,7 @@ export const ACCIONES = [
   {
     ticker: "AMZN",
     nombre: "Amazon.com Inc.",
-    mercado: "NYSE",
+    mercado: "NASDAQ",
     sector: "CONSUMO",
     moneda: "USD",
     precio: 130.5,
