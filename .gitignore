@@ -14,3 +14,10 @@ yarn-error.log*
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# Variables de entorno locales (no se versionan; .env.example y .env.mock si)
+.env
+
+# Playwright
+test-results/
+playwright-report/

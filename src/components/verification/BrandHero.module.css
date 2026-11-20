@@ -11,15 +11,16 @@
   min-height: 100%;
 }
 
+/* El logo aprobado es de tintas oscuras: sobre el panel oscuro va en una placa clara. */
 .brand {
+  align-self: flex-start;
+  margin-bottom: var(--space-6);
   display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-}
-
-.brandName {
-  font-size: clamp(1.6rem, 2vw, 2rem);
-  font-weight: var(--font-weight-bold);
+  padding: var(--space-3) var(--space-4);
+  background: #fbfaf5;
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
 }
 
 .content {
@@ -85,5 +86,12 @@
 @media (max-width: 900px) {
   .content {
     margin: var(--space-7) 0;
+  }
+}
+
+/* En pantallas angostas el selector de tema flota arriba: deja espacio para que no tape el logo. */
+@media (max-width: 900px) {
+  .brand {
+    margin-top: 52px;
   }
 }

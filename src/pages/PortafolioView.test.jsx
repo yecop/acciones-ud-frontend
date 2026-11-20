@@ -79,11 +79,50 @@ it("un fallo de API muestra error, no un portafolio vacío, y permite reintentar
   expect(await screen.findByRole("table")).toBeInTheDocument();
 });
 
-it("si no puede cargar preferencias informa el error en lugar de ignorar la vista guardada", async () => {
-  server.use(http.get("*/api/v1/perfil/preferencias", () => HttpResponse.error()));
+it.each(["red", "404"])(
+  "preferencias no disponibles (%s): conserva saldo y posiciones en Tabla y permite recuperar Tarjetas",
+  async (fallo) => {
+    server.use(
+      http.get("*/api/v1/perfil/preferencias", () =>
+        fallo === "red"
+          ? HttpResponse.error()
+          : HttpResponse.json({ codigo: "NO_ENCONTRADO" }, { status: 404 })
+      )
+    );
+    abrir();
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "No pudimos leer tu vista guardada; se muestra Tabla."
+    );
+    expect(
+      screen.getByText(formatCurrency("4250.00"), { normalizer: (t) => t })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    server.resetHandlers();
+    db.usuarios[0].preferencias.visualizacion.portafolio = "TARJETAS";
+    await userEvent.click(screen.getByRole("button", { name: "Actualizar" }));
+    expect(await screen.findByRole("article", { name: "Posición AAPL" })).toBeInTheDocument();
+    expect(screen.queryByText(/No pudimos leer tu vista guardada/)).not.toBeInTheDocument();
+  }
+);
+
+it("una vista desconocida usa Tabla con un aviso", async () => {
+  server.use(
+    http.get("*/api/v1/perfil/preferencias", () =>
+      HttpResponse.json({ visualizacion: { portafolio: "OTRA" } })
+    )
+  );
   abrir();
-  expect(await screen.findByRole("alert")).toHaveTextContent(/conectarnos al servidor/);
-  expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  await screen.findByRole("table");
+  expect(screen.getByRole("status")).toHaveTextContent(/No reconocemos tu vista guardada/);
+});
+
+it("preferencias no disponibles no ocultan el estado de cuenta vacía", async () => {
+  server.use(http.get("*/api/v1/perfil/preferencias", () => HttpResponse.error()));
+  abrir({ nuevo: true });
+  await screen.findByText("Aún no tienes posiciones");
+  expect(screen.getByRole("status")).toHaveTextContent(/se muestra Tabla/);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 
 it("actualiza la preferencia desde la API al pulsar Actualizar", async () => {

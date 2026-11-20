@@ -16,6 +16,12 @@ export const RUTAS = {
 export const RUTAS_PROTEGIDAS = [
   { id: "panel", path: "/panel", titulo: "Panel", roles: [ROLES.INV] },
   {
+    id: "acciones",
+    path: "/acciones",
+    titulo: "Acciones",
+    roles: [ROLES.INV, ROLES.COM],
+  },
+  {
     id: "operar",
     path: "/operar",
     titulo: "Operar",

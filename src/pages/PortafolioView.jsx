@@ -7,36 +7,40 @@ import PosicionesTable from "../components/portafolio/PosicionesTable.jsx";
 import PosicionesCards from "../components/portafolio/PosicionesCards.jsx";
 import { obtenerSaldo, obtenerResumenPortafolio, listarPosiciones } from "../api/portafolioApi.js";
 import { obtenerPreferencias } from "../api/perfilApi.js";
-import { useTheme } from "../theme/ThemeContext.jsx";
 
 export default function PortafolioView() {
   const [datos, setDatos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [aviso, setAviso] = useState(null);
   const [intento, setIntento] = useState(0);
-  const { setTheme, themes } = useTheme();
   useEffect(() => {
     let activo = true;
     setLoading(true);
     setError(null);
+    setAviso(null);
     setDatos(null);
-    Promise.all([
-      obtenerSaldo(),
-      obtenerResumenPortafolio(),
-      listarPosiciones(),
+    Promise.allSettled([
+      Promise.all([obtenerSaldo(), obtenerResumenPortafolio(), listarPosiciones()]),
       obtenerPreferencias(),
     ])
-      .then(([saldo, resumen, posiciones, preferencias]) => {
+      .then(([cuenta, configuracion]) => {
         if (!activo) return;
-        const vista = preferencias.visualizacion?.portafolio ?? "TABLA";
-        if (!["TABLA", "TARJETAS"].includes(vista))
-          throw new Error(
-            "No podemos mostrar la vista guardada. Revisa tus preferencias en Perfil."
-          );
+        if (cuenta.status === "rejected") throw cuenta.reason;
+        const [saldo, resumen, posiciones] = cuenta.value;
+        let vista = "TABLA";
+        if (configuracion.status === "rejected") {
+          setAviso("No pudimos leer tu vista guardada; se muestra Tabla.");
+        } else {
+          const guardada = configuracion.value?.visualizacion?.portafolio ?? "TABLA";
+          if (["TABLA", "TARJETAS"].includes(guardada)) vista = guardada;
+          else
+            setAviso(
+              "No reconocemos tu vista guardada; se muestra Tabla. Puedes cambiarla en Perfil."
+            );
+        }
         if (!Array.isArray(posiciones) || !saldo || !resumen)
           throw new Error("La respuesta del portafolio no es válida.");
-        if (themes.some((t) => t.id === preferencias.visualizacion?.tema))
-          setTheme(preferencias.visualizacion.tema);
         setDatos({ saldo, resumen, posiciones, vista });
       })
       .catch((e) => {
@@ -48,7 +52,7 @@ export default function PortafolioView() {
     return () => {
       activo = false;
     };
-  }, [intento, setTheme, themes]);
+  }, [intento]);
   return (
     <div className={styles.main}>
       <div className={styles.headingRow}>
@@ -76,12 +80,17 @@ export default function PortafolioView() {
       )}
       {datos && !loading && !error && (
         <>
+          {aviso && (
+            <p role="status" className={styles.notice}>
+              {aviso}
+            </p>
+          )}
           <div className={styles.columns}>
             <SaldoWidget saldo={datos.saldo} />
             <PortafolioResumen resumen={datos.resumen} />
           </div>
           <p className={styles.subheading}>
-            Vista guardada: {datos.vista === "TARJETAS" ? "Tarjetas" : "Tabla"}.{" "}
+            Vista actual: {datos.vista === "TARJETAS" ? "Tarjetas" : "Tabla"}.{" "}
             <Link to="/perfil">Cambiar en Perfil</Link>
           </p>
           {datos.vista === "TARJETAS" && datos.posiciones.length ? (

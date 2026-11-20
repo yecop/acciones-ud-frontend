@@ -40,6 +40,41 @@ function error(request, status, codigo, mensaje, { detalles, datos, headers } = 
 
 const sinContenido = () => new HttpResponse(null, { status: 204 });
 
+/** Tickers del mock con dato viejo en caché (SCRUM-24), para ver la advertencia de antigüedad. */
+const TICKERS_DESACTUALIZADOS = new Set(["SHEL", "7203", "BHP"]);
+
+/** Cotización con la forma de `GET /acciones/{ticker}/cotizacion` del backend (SCRUM-24). */
+function cotizacionMock(ticker) {
+  const accion = ACCIONES.find((a) => a.ticker === ticker);
+  if (!accion) return undefined;
+  const desactualizada = TICKERS_DESACTUALIZADOS.has(ticker);
+  // Mismo contrato que el backend: 15 s en EE. UU.; 30 min en LSE, TSE y ASX.
+  const umbralAntiguedadSegundos = ["NYSE", "NASDAQ"].includes(accion.mercado) ? 15 : 1800;
+  const antiguedadSegundos = desactualizada ? umbralAntiguedadSegundos + 30 : 2;
+  return {
+    ticker: accion.ticker,
+    precio: monto(accion.precio),
+    bid: monto(accion.precio - 0.02),
+    ask: monto(accion.precio + 0.02),
+    spread: "0.04",
+    volumen: 1_250_000,
+    actualizadoEn: new Date(Date.now() - antiguedadSegundos * 1000).toISOString(),
+    fuente: "ALPACA_IEX",
+    antiguedadSegundos,
+    umbralAntiguedadSegundos,
+    desactualizada,
+    variacionPorcentaje: monto(accion.variacion),
+    ...(desactualizada
+      ? {
+          advertencia: {
+            codigo: "DATO_DESACTUALIZADO",
+            mensaje: `La cotización tiene ${antiguedadSegundos} s de antigüedad (máximo esperado: ${umbralAntiguedadSegundos} s).`,
+          },
+        }
+      : {}),
+  };
+}
+
 async function leerCuerpo(request) {
   try {
     return (await request.json()) ?? {};
@@ -485,7 +520,10 @@ export const handlers = [
           (!mercado || a.mercado === mercado) &&
           (!sector || a.sector === sector) &&
           (!q || a.ticker.toLowerCase().includes(q) || a.nombre.toLowerCase().includes(q))
-      ).map(({ variacion: _variacion, precio: _precio, ...accion }) => accion);
+      ).map(({ variacion: _variacion, precio: _precio, ...accion }) => ({
+        ...accion,
+        cotizacion: cotizacionMock(accion.ticker),
+      }));
       return HttpResponse.json(pagina(filtradas, url));
     })
   ),
@@ -496,7 +534,7 @@ export const handlers = [
       const accion = ACCIONES.find((a) => a.ticker === params.ticker);
       if (!accion) return error(request, 404, "NO_ENCONTRADO", "Acción inexistente.");
       const { variacion: _variacion, precio: _precio, ...detalle } = accion;
-      return HttpResponse.json(detalle);
+      return HttpResponse.json({ ...detalle, cotizacion: cotizacionMock(accion.ticker) });
     })
   ),
 
@@ -505,15 +543,7 @@ export const handlers = [
     protegido(null, ({ request, params }) => {
       const accion = ACCIONES.find((a) => a.ticker === params.ticker);
       if (!accion) return error(request, 404, "NO_ENCONTRADO", "Acción inexistente.");
-      return HttpResponse.json({
-        ticker: accion.ticker,
-        precio: monto(accion.precio),
-        bid: monto(accion.precio - 0.02),
-        ask: monto(accion.precio + 0.02),
-        spread: "0.04",
-        variacionPorcentaje: monto(accion.variacion),
-        actualizadoEn: new Date().toISOString(),
-      });
+      return HttpResponse.json(cotizacionMock(accion.ticker));
     })
   ),
 

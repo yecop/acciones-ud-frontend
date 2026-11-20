@@ -1,0 +1,55 @@
+/* Los temas aún no definen un color de advertencia: se usa un ámbar legible en claro y oscuro. */
+.chip {
+  --warn: var(--color-warning, #b45309);
+  --warn-soft: var(--color-warning-soft, rgba(245, 158, 11, 0.16));
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+}
+
+.al-dia {
+  background: var(--color-chip-soft);
+  color: var(--color-positive);
+}
+
+.sin-dato {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.desactualizada {
+  --warn: var(--color-warning, #b45309);
+  --warn-soft: var(--color-warning-soft, rgba(245, 158, 11, 0.16));
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.proveedor {
+  background: rgba(229, 72, 77, 0.12);
+  border-color: var(--color-negative);
+  color: var(--color-negative);
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1.5px solid;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.icono {
+  font-size: 1em;
+  line-height: 1;
+}
