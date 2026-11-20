@@ -12,6 +12,8 @@ import AccionesPage from "../pages/AccionesPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
 import { dashboardData } from "../data/dashboardData.js";
+import { useResumenPanel } from "../hooks/useResumenPanel.js";
+import { construirDatosPanel } from "../pages/panelDatos.js";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { RUTA_INICIAL_POR_ROL, RUTAS, RUTAS_PROTEGIDAS, rutaDeNavegacion } from "./routesConfig.js";
 
@@ -32,28 +34,29 @@ function fechaDeHoy() {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-/** Panel del inversionista. SCRUM-30 reemplaza los datos de ejemplo por el API. */
+/** Panel del inversionista: saldo, portafolio y destacada vienen de la API; el gráfico es de ejemplo. */
 function RutaPanel() {
   const { usuario, rol, cerrarSesion } = useAuth();
   const navigate = useNavigate();
+  const resumen = useResumenPanel();
 
-  const datos = useMemo(() => {
-    const nombre = usuario?.nombre ?? "";
-    return {
-      ...dashboardData,
-      user: {
-        ...dashboardData.user,
-        name: nombre,
-        initials: nombre.slice(0, 2).toUpperCase(),
-        role: ETIQUETA_ROL[rol],
-      },
-      greeting: { title: `Hola, ${nombre}`, subtitle: fechaDeHoy() },
-    };
-  }, [usuario, rol]);
+  const datos = useMemo(
+    () =>
+      construirDatosPanel({
+        base: dashboardData,
+        persona: { nombre: usuario?.nombre ?? "", rol: ETIQUETA_ROL[rol] },
+        saldo: resumen.saldo,
+        dashboard: resumen.dashboard,
+        estadoMercado: resumen.estadoMercado,
+        fecha: fechaDeHoy(),
+      }),
+    [usuario, rol, resumen.saldo, resumen.dashboard, resumen.estadoMercado]
+  );
 
   return (
     <DashboardPage
       data={datos}
+      carga={{ cargando: resumen.cargando, error: resumen.error, onReintentar: resumen.refrescar }}
       onNewOrder={() => navigate("/operar")}
       onTrade={() => navigate("/operar")}
       onNavigate={(id) => navigate(rutaDeNavegacion(id))}
