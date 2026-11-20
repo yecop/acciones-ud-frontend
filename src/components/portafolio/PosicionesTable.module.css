@@ -1,4 +1,5 @@
 .card {
+  min-width: 0;
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: clamp(var(--space-4), 1.6vw, 28px);
@@ -6,6 +7,36 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.scroll:focus-visible {
+  outline: 3px solid var(--color-brand-hero);
+  outline-offset: 3px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--space-4);
+}
+.position {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  min-width: 0;
+}
+.details {
+  display: grid;
+  gap: var(--space-3);
+}
+.details div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.details dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .title {
@@ -23,7 +54,7 @@
 }
 
 .error {
-  color: var(--color-negative);
+  color: color-mix(in srgb, var(--color-negative) 65%, var(--color-text));
   font-weight: var(--font-weight-semibold);
 }
 
@@ -70,12 +101,12 @@
 }
 
 .positive {
-  color: var(--color-positive);
+  color: color-mix(in srgb, var(--color-positive) 45%, var(--color-text));
   font-weight: var(--font-weight-bold);
 }
 
 .negative {
-  color: var(--color-negative);
+  color: color-mix(in srgb, var(--color-negative) 65%, var(--color-text));
   font-weight: var(--font-weight-bold);
 }
 
