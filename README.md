@@ -156,8 +156,32 @@ HTTP común, igual que el resto: `src/api/mercadosApi.js` y `src/api/portafolioA
 Con eso heredan el token, la renovación automática, `X-Trace-Id` y los mensajes de error en español.
 Para agregar un módulo nuevo basta con importar `http` de `src/api/http.js`; no se usa `fetch` directo.
 
-- Widget de mercados (`MercadosStatusWidget`) en el panel, con refresco periódico.
+- El estado de los mercados se muestra en el panel de mercados (`PanelMercados`, SCRUM-30).
 - `/portafolio` (rol INVERSIONISTA) muestra saldo, resumen y posiciones dentro del marco común.
+
+## Dashboard de mercados y acciones (SCRUM-30)
+
+`PanelMercados` (en `/panel`) muestra, por mercado: estado abierto/cerrado con próxima apertura o
+cierre, y sus acciones con último precio, bid, ask, spread, variación y antigüedad del dato.
+
+- Datos: `useMercadosDashboard` pide `/mercados`, `/mercados/{c}/estado`, `/perfil` (intereses) y
+  `GET /acciones?mercado=X` (una llamada por mercado: cada acción ya trae su `cotizacion` desde la
+  caché del backend) mediante `CotizacionesService` (SCRUM-24). Se refresca cada 30 s.
+- Intereses: las acciones cuyo sector está en `intereses.sectores` van primero, y los mercados de
+  `intereses.mercados` también. Si el perfil falla, se muestra todo sin ese orden.
+- LSE, TSE y ASX se marcan «Cierre diario» y «Ejecución simulada» (`src/mercados/reglas.js`).
+- Dato antiguo: no hay umbral propio. Se usa lo que envía el backend en cada cotización
+  (`umbralAntiguedadSegundos`, `desactualizada`, `advertencia`) con las mismas reglas que la
+  pantalla de acciones (`src/utils/antiguedad.js`). Con el mercado **abierto** se muestra «Dato
+  antiguo»; con el mercado cerrado, «Último cierre»; con `PROVEEDOR_NO_DISPONIBLE`, «Proveedor sin
+  respuesta» y el último dato conocido.
+- Si el proveedor falla: un aviso global si todas las acciones vienen sin cotización,
+  «Cotización no disponible» en la fila si falla una, y un error con «Reintentar» si falla la lista
+  de mercados (se conservan los últimos datos cargados).
+
+Probar fallos desde la consola del navegador con `npm start`:
+`__mock.proveedorCaido()`, `__mock.datoAntiguo('AAPL', 600)` y `__mock.mercadoAbierto('NYSE')`
+(sin forzar, el estado depende de la hora real y la advertencia solo aplica con el mercado abierto).
 
 ## Acciones y cotizaciones (SCRUM-24)
 

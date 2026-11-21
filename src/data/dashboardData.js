@@ -74,32 +74,6 @@ export const dashboardData = {
     ],
   },
 
-  markets: [
-    { id: "nyse", name: "Nueva York (NYSE)", schedule: "Cierra 4:00 PM ET", status: "open" },
-    { id: "nasdaq", name: "NASDAQ", schedule: "Cierra 4:00 PM ET", status: "open" },
-    { id: "lse", name: "Londres (LSE)", schedule: "Abre 8:00 AM GMT", status: "closed" },
-    { id: "tse", name: "Tokio (TSE)", schedule: "Abre 9:00 AM JST", status: "closed" },
-    {
-      id: "asx",
-      name: "Sídney (ASX)",
-      schedule: "Abre 10:00 AM hora de Sídney",
-      status: "closed",
-    },
-  ],
-  marketsNote:
-    "Las órdenes fuera de horario se encolan para la próxima apertura y te pedimos confirmarlas.",
-
-  watchlist: {
-    sector: "Tecnología",
-    rows: [
-      { symbol: "AAPL", name: "Apple Inc.", price: "176.50", change: "▲ 0.51 %", tone: "positive" },
-      { symbol: "MSFT", name: "Microsoft Corp.", price: "335.00", change: "▼ 0.31 %", tone: "negative" },
-      { symbol: "TSLA", name: "Tesla Inc.", price: "280.00", change: "▲ 1.84 %", tone: "positive" },
-      { symbol: "NVDA", name: "NVIDIA Corp.", price: "118.40", change: "▲ 2.10 %", tone: "positive" },
-      { symbol: "AMZN", name: "Amazon.com Inc.", price: "130.50", change: "▼ 0.45 %", tone: "negative" },
-    ],
-  },
-
   /** Configuración para el formulario de creación de órdenes. */
   trading: {
     asset: { symbol: "AAPL", name: "Apple Inc.", currentPrice: 176.5 },
