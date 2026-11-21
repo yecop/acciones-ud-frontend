@@ -45,13 +45,18 @@ const sinContenido = () => new HttpResponse(null, { status: 204 });
 const TICKERS_DESACTUALIZADOS = new Set(["SHEL", "7203", "BHP"]);
 
 /** Cotización con la forma de `GET /acciones/{ticker}/cotizacion` del backend (SCRUM-24). */
-function cotizacionMock(ticker) {
+function cotizacionMock(ticker, edadForzadaSegundos) {
   const accion = ACCIONES.find((a) => a.ticker === ticker);
   if (!accion) return undefined;
-  const desactualizada = TICKERS_DESACTUALIZADOS.has(ticker);
   // Mismo contrato que el backend: 15 s en EE. UU.; 30 min en LSE, TSE y ASX.
   const umbralAntiguedadSegundos = ["NYSE", "NASDAQ"].includes(accion.mercado) ? 15 : 1800;
-  const antiguedadSegundos = desactualizada ? umbralAntiguedadSegundos + 30 : 2;
+  // `edadForzadaSegundos` lo fija `__mock.datoAntiguo()` (SCRUM-30) para probar el dato viejo.
+  const desactualizada =
+    edadForzadaSegundos !== undefined
+      ? edadForzadaSegundos > umbralAntiguedadSegundos
+      : TICKERS_DESACTUALIZADOS.has(ticker);
+  const antiguedadSegundos =
+    edadForzadaSegundos ?? (desactualizada ? umbralAntiguedadSegundos + 30 : 2);
   return {
     ticker: accion.ticker,
     precio: monto(accion.precio),
@@ -73,6 +78,28 @@ function cotizacionMock(ticker) {
           },
         }
       : {}),
+  };
+}
+
+/**
+ * Acción con su cotización, como la devuelve `GET /acciones` del backend. Respeta las ayudas de
+ * `window.__mock`: con el proveedor caído no hay cotización y se avisa con
+ * `PROVEEDOR_NO_DISPONIBLE`; `datoAntiguo()` fija la antigüedad de una acción.
+ */
+function accionConCotizacion(accion) {
+  const { variacion: _variacion, precio: _precio, ...base } = accion;
+  if (db.simulacion.proveedorCaido) {
+    return {
+      ...base,
+      advertencia: {
+        codigo: "PROVEEDOR_NO_DISPONIBLE",
+        mensaje: "El proveedor de datos de mercado no responde.",
+      },
+    };
+  }
+  return {
+    ...base,
+    cotizacion: cotizacionMock(accion.ticker, db.simulacion.edades[accion.ticker]),
   };
 }
 
@@ -505,7 +532,16 @@ export const handlers = [
     protegido(null, ({ request, params }) => {
       const mercado = MERCADOS.find((m) => m.codigo === params.codigo);
       if (!mercado) return error(request, 404, "NO_ENCONTRADO", "Mercado inexistente.");
-      return HttpResponse.json(estadoDeMercado(mercado));
+      const estado = estadoDeMercado(mercado);
+      const forzado = db.simulacion.mercadoAbierto[mercado.codigo];
+      if (forzado === undefined) return HttpResponse.json(estado);
+      return HttpResponse.json({
+        ...estado,
+        abierto: forzado,
+        estado: forzado ? "ABIERTO" : "CERRADO",
+        proximoCierre: forzado ? (estado.proximoCierre ?? estado.proximaApertura) : null,
+        proximaApertura: forzado ? null : (estado.proximaApertura ?? estado.proximoCierre),
+      });
     })
   ),
 
@@ -521,10 +557,7 @@ export const handlers = [
           (!mercado || a.mercado === mercado) &&
           (!sector || a.sector === sector) &&
           (!q || a.ticker.toLowerCase().includes(q) || a.nombre.toLowerCase().includes(q))
-      ).map(({ variacion: _variacion, precio: _precio, ...accion }) => ({
-        ...accion,
-        cotizacion: cotizacionMock(accion.ticker),
-      }));
+      ).map(accionConCotizacion);
       return HttpResponse.json(pagina(filtradas, url));
     })
   ),
@@ -534,8 +567,7 @@ export const handlers = [
     protegido(null, ({ request, params }) => {
       const accion = ACCIONES.find((a) => a.ticker === params.ticker);
       if (!accion) return error(request, 404, "NO_ENCONTRADO", "Acción inexistente.");
-      const { variacion: _variacion, precio: _precio, ...detalle } = accion;
-      return HttpResponse.json({ ...detalle, cotizacion: cotizacionMock(accion.ticker) });
+      return HttpResponse.json(accionConCotizacion(accion));
     })
   ),
 
@@ -544,7 +576,14 @@ export const handlers = [
     protegido(null, ({ request, params }) => {
       const accion = ACCIONES.find((a) => a.ticker === params.ticker);
       if (!accion) return error(request, 404, "NO_ENCONTRADO", "Acción inexistente.");
-      return HttpResponse.json(cotizacionMock(accion.ticker));
+      if (db.simulacion.proveedorCaido)
+        return error(
+          request,
+          502,
+          "PROVEEDOR_NO_DISPONIBLE",
+          "El proveedor de datos de mercado no responde."
+        );
+      return HttpResponse.json(cotizacionMock(accion.ticker, db.simulacion.edades[accion.ticker]));
     })
   ),
 

@@ -298,10 +298,11 @@ function mercadoDe(accion) {
   return mercado;
 }
 
-function estadoMercado(trading, accion) {
+/** Prioridad: `ordenes.mercado()` (global) > `mercadoAbierto(codigo)` del panel > horario real. */
+function estadoMercado(trading, accion, forzadoPorMercado = {}) {
   const estado = estadoDeMercado(mercadoDe(accion));
-  if (trading.mercadoForzado === null) return estado;
-  const abierto = trading.mercadoForzado;
+  const abierto = trading.mercadoForzado ?? forzadoPorMercado[accion.mercado];
+  if (abierto === undefined || abierto === null) return estado;
   return {
     ...estado,
     abierto,
@@ -443,7 +444,7 @@ export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina,
             });
           }
           const c = calcular(cuerpo, accion);
-          const mercado = estadoMercado(trading(), accion);
+          const mercado = estadoMercado(trading(), accion, db.simulacion?.mercadoAbierto);
           const saldo = saldoDe(trading(), usuario);
           const fondosSuficientes =
             cuerpo.lado === "COMPRA"
@@ -496,7 +497,7 @@ export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina,
             });
           }
           const c = calcular(cuerpo, accion);
-          const mercado = estadoMercado(t, accion);
+          const mercado = estadoMercado(t, accion, db.simulacion?.mercadoAbierto);
           const saldo = t.saldos[usuario.id] ?? { disponible: 0, reservado: 0 };
           const compra = cuerpo.lado === "COMPRA";
 

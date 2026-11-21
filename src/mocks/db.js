@@ -93,7 +93,11 @@ export const db = {
   /** Órdenes, saldos y tenencias simulados (SCRUM-35). */
   trading: crearEstadoTrading(),
 
+  /** Fallos y datos viejos que se activan desde la consola (`window.__mock`). */
+  simulacion: { proveedorCaido: false, edades: {}, mercadoAbierto: {} },
+
   reiniciar() {
+    this.simulacion = { proveedorCaido: false, edades: {}, mercadoAbierto: {} };
     this.usuarios = usuariosIniciales();
     this.tokensAcceso.clear();
     this.tokensRefresh.clear();
