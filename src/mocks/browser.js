@@ -1,6 +1,7 @@
 import { setupWorker } from "msw/browser";
 import { CODIGO_MFA_VALIDO, CONTRASENA_DEMO, db } from "./db.js";
 import { handlers } from "./handlers.js";
+import { utilidadesOrdenes } from "./ordenes.js";
 import { conectarPersistencia } from "./persistence.js";
 
 /**
@@ -27,6 +28,8 @@ export async function iniciarMock() {
     /** Cuántas veces se renovó el token desde que cargó la página. */
     renovaciones: () => db.contadores.refresh,
     reiniciar: () => db.reiniciar(),
+    /** Órdenes: mercado(true|false|null), ejecutarPendientes(), fallar(codigo), latencia(ms), limpiar(). */
+    ordenes: utilidadesOrdenes(db),
   };
 
   console.info(
