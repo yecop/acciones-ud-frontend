@@ -6,18 +6,42 @@ import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
  * Mock de órdenes (SCRUM-35). Estado en memoria, coherente con saldo y portafolio:
  * crear una compra reserva fondos, ejecutarla mueve el saldo y la posición, cancelarla libera.
  *
- * Las formas de respuesta de simulación, creación y cancelación siguen el contrato acordado.
- * Las de las listas (GET /ordenes e historial) y los estados intermedios NO están en el contrato:
- * son supuestos documentados en docs/trading-mock.md para que backend los valide.
+ * Las reglas siguen las respuestas del backend (22-nov). Lo que ellos marcaron como [Propuesta]
+ * y lo que sigue sin definir está en docs/trading-mock.md; puede cambiar.
  */
 
 const RAIZ = "*/api/v1";
-const PORCENTAJE_COMISION = 0.5;
+/** [Definido] 2,00 % del total de la transacción (configurable en el backend). */
+const PORCENTAJE_COMISION = 2;
+/** [Definido] Con comisionista: 60 % Acciones UD y 40 % comisionista. */
+const PARTE_COMISIONISTA = 0.4;
 export const CODIGO_AUTORIZACION_VALIDO = "654321";
+const VIGENCIA_AUTORIZACION_MS = 5 * 60_000;
 const TIPOS = ["MARKET", "LIMIT", "STOP_LOSS", "TAKE_PROFIT"];
 const LADOS = ["COMPRA", "VENTA"];
-/** Estados desde los que sí se puede cancelar. */
-const CANCELABLES = new Set(["PENDIENTE"]);
+
+/** [Definido] No existe EJECUTADA: las ejecuciones (también las parciales) van aparte. */
+export const ESTADOS_ORDEN = [
+  "PENDIENTE",
+  "ENVIADA",
+  "FIRMADA_POR_COMISIONISTA",
+  "EN_EJECUCION",
+  "CANCELADA",
+  "RECHAZADA",
+  "EXPIRADA",
+  "EN_REVISION",
+  "FALLIDA",
+  "DETENIDA",
+];
+/** [Propuesta] Solo se puede cancelar en PENDIENTE o EN_REVISION. */
+const CANCELABLES = new Set(["PENDIENTE", "EN_REVISION"]);
+/** Estados finales que liberan los fondos reservados de una compra. */
+const LIBERAN_FONDOS = new Set(["CANCELADA", "RECHAZADA", "EXPIRADA", "FALLIDA"]);
+/**
+ * ⚠ Sin definir: el backend no tiene EJECUTADA. El mock deja la orden completamente ejecutada
+ * en este estado, con `cantidadEjecutada === cantidad`.
+ */
+const ESTADO_AL_EJECUTAR = "EN_EJECUCION";
 
 const STATUS_POR_CODIGO = {
   VALIDACION_FALLIDA: 400,
@@ -50,130 +74,134 @@ const DIA = 24 * HORA;
 // ------------------------------------------------------------------- estado
 
 export const USUARIO_LAURA = "5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e01";
+const SISTEMA = { tipo: "SISTEMA", id: null };
 
-/** Nueve campos de una orden + historial de estados. */
-function crearOrdenBase(datos, historial) {
-  return { ...datos, historial };
+const precioDe = (ticker) => ACCIONES.find((a) => a.ticker === ticker)?.precio ?? 0;
+
+/** Entrada del historial: [Definido] estado, fecha, actor, motivo, precio de referencia, bid, ask y traceId. */
+function entradaHistorial(estado, fecha, actor, motivo, ticker) {
+  const precio = precioDe(ticker);
+  return {
+    estado,
+    fecha,
+    actor,
+    motivo,
+    precioReferencia: monto(precio),
+    bid: monto(precio - 0.02),
+    ask: monto(precio + 0.02),
+    traceId: nuevoUuid(),
+  };
+}
+
+function calcularTotales(lado, cantidad, precio) {
+  const total = redondear(cantidad * precio);
+  const comision = redondear((total * PORCENTAJE_COMISION) / 100);
+  return {
+    total,
+    comision,
+    totalDescontado: redondear(lado === "COMPRA" ? total + comision : total - comision),
+  };
 }
 
 function semillas() {
-  const sistema = { tipo: "SISTEMA", nombre: "Motor de órdenes" };
-  const laura = { tipo: "USUARIO", nombre: "Laura" };
-  const calcular = (lado, cantidad, precio) => {
-    const total = redondear(cantidad * precio);
-    const comision = redondear((total * PORCENTAJE_COMISION) / 100);
-    return { total, comision, descontado: lado === "COMPRA" ? total + comision : total - comision };
-  };
-  const nueva = (id, ticker, lado, tipo, cantidad, precio, extras, historial) => {
-    const c = calcular(lado, cantidad, precio);
-    return crearOrdenBase(
-      {
-        id,
-        usuarioId: USUARIO_LAURA,
-        ticker,
-        lado,
-        tipo,
-        cantidad,
-        precioLimite: tipo === "LIMIT" ? monto(precio) : null,
-        precioStop: null,
-        precioEstimado: monto(precio),
-        precioEjecucion: null,
-        totalTransaccion: monto(c.total),
-        comisionValor: c.comision,
-        totalDescontado: redondear(c.descontado),
-        encolada: false,
-        saldoLiberado: "0.00",
-        reservado: false,
-        ...extras,
-      },
-      historial
+  const laura = { tipo: "USUARIO", id: USUARIO_LAURA };
+  const nueva = (n, ticker, lado, tipo, cantidad, precio, { estado, antes, motivos, extras }) => {
+    const c = calcularTotales(lado, cantidad, precio);
+    const creada = hace(antes);
+    const historial = motivos.map(([est, desfase, actor, motivo]) =>
+      entradaHistorial(est, hace(antes - desfase), actor, motivo, ticker)
     );
+    return {
+      id: `0a000000-0000-4000-8000-00000000000${n}`,
+      usuarioId: USUARIO_LAURA,
+      ticker,
+      lado,
+      tipo,
+      cantidad,
+      precioLimite: tipo === "LIMIT" ? monto(precio) : null,
+      precioStop: null,
+      precioEstimado: monto(precio),
+      totalTransaccion: monto(c.total),
+      comisionValor: c.comision,
+      conComisionista: false,
+      totalDescontado: c.totalDescontado,
+      valorRestante: 0,
+      estado,
+      encolada: false,
+      ejecuciones: [],
+      validadaPor: null,
+      validadaEn: null,
+      creadaEn: creada,
+      actualizadaEn: historial.at(-1).fecha,
+      historial,
+      ...extras,
+    };
   };
   return [
-    nueva(
-      "0a000000-0000-4000-8000-000000000001",
-      "MSFT",
-      "COMPRA",
-      "LIMIT",
-      1,
-      349.45,
-      {
-        estado: "PENDIENTE",
-        creadaEn: hace(2 * HORA),
-        actualizadaEn: hace(2 * HORA),
-        reservado: true,
+    // Pendiente con fondos reservados: 344.31 + 2 % (6.89) = 351.20, el reservado del saldo demo.
+    nueva(1, "MSFT", "COMPRA", "LIMIT", 1, 344.31, {
+      estado: "PENDIENTE",
+      antes: 2 * HORA,
+      motivos: [["PENDIENTE", 0, laura, "Orden creada"]],
+      extras: { valorRestante: 351.2 },
+    }),
+    nueva(2, "AAPL", "COMPRA", "MARKET", 10, 170.0, {
+      estado: ESTADO_AL_EJECUTAR,
+      antes: 20 * DIA,
+      motivos: [[ESTADO_AL_EJECUTAR, 0, laura, "Orden creada"]],
+      extras: {
+        ejecuciones: [{ cantidad: 10, precio: "170.00", fecha: hace(20 * DIA - 4000) }],
       },
-      [{ estado: "PENDIENTE", fecha: hace(2 * HORA), actor: laura, motivo: "Orden creada" }]
-    ),
-    nueva(
-      "0a000000-0000-4000-8000-000000000002",
-      "AAPL",
-      "COMPRA",
-      "MARKET",
-      10,
-      170.0,
-      {
-        estado: "EJECUTADA",
-        precioEjecucion: "170.00",
-        creadaEn: hace(20 * DIA),
-        actualizadaEn: hace(20 * DIA),
-      },
-      [
-        { estado: "EN_EJECUCION", fecha: hace(20 * DIA), actor: laura, motivo: "Orden creada" },
-        {
-          estado: "EJECUTADA",
-          fecha: hace(20 * DIA - 4000),
-          actor: sistema,
-          motivo: "Ejecutada a precio de mercado",
-        },
-      ]
-    ),
-    nueva(
-      "0a000000-0000-4000-8000-000000000003",
-      "TSLA",
-      "COMPRA",
-      "LIMIT",
-      2,
-      240.0,
-      {
-        estado: "CANCELADA",
-        creadaEn: hace(9 * DIA),
-        actualizadaEn: hace(8 * DIA),
-        saldoLiberado: "482.40",
-      },
-      [
-        { estado: "PENDIENTE", fecha: hace(9 * DIA), actor: laura, motivo: "Orden creada" },
-        {
-          estado: "CANCELADA",
-          fecha: hace(8 * DIA),
-          actor: laura,
-          motivo: "Cancelada por el usuario",
-        },
-      ]
-    ),
-    nueva(
-      "0a000000-0000-4000-8000-000000000004",
-      "XOM",
-      "VENTA",
-      "STOP_LOSS",
-      2,
-      100.0,
-      {
-        estado: "RECHAZADA",
-        precioStop: "100.00",
-        creadaEn: hace(5 * DIA),
-        actualizadaEn: hace(5 * DIA),
-      },
-      [
-        { estado: "PENDIENTE", fecha: hace(5 * DIA), actor: laura, motivo: "Orden creada" },
-        {
-          estado: "RECHAZADA",
-          fecha: hace(5 * DIA - 60_000),
-          actor: sistema,
-          motivo: "Rechazada por el proveedor: precio stop fuera de rango",
-        },
-      ]
-    ),
+    }),
+    nueva(3, "TSLA", "COMPRA", "LIMIT", 2, 240.0, {
+      estado: "CANCELADA",
+      antes: 9 * DIA,
+      motivos: [
+        ["PENDIENTE", 0, laura, "Orden creada"],
+        ["CANCELADA", DIA, laura, "Cancelada por el usuario"],
+      ],
+    }),
+    nueva(4, "XOM", "VENTA", "STOP_LOSS", 2, 100.0, {
+      estado: "RECHAZADA",
+      antes: 5 * DIA,
+      motivos: [
+        ["PENDIENTE", 0, laura, "Orden creada"],
+        ["RECHAZADA", 60_000, SISTEMA, "Rechazada: precio stop fuera de rango"],
+      ],
+      extras: { precioStop: "100.00" },
+    }),
+    nueva(5, "NVDA", "COMPRA", "LIMIT", 1, 100.0, {
+      estado: "EXPIRADA",
+      antes: 12 * DIA,
+      motivos: [
+        ["PENDIENTE", 0, laura, "Orden creada"],
+        ["EXPIRADA", 11 * DIA, SISTEMA, "Venció sin ejecutarse"],
+      ],
+    }),
+    nueva(6, "AAPL", "VENTA", "LIMIT", 1, 190.0, {
+      estado: "EN_REVISION",
+      antes: 3 * HORA,
+      motivos: [
+        ["PENDIENTE", 0, laura, "Orden creada"],
+        ["EN_REVISION", 60_000, SISTEMA, "En revisión por monto inusual"],
+      ],
+    }),
+    nueva(7, "NVDA", "COMPRA", "MARKET", 1, 105.5, {
+      estado: "FALLIDA",
+      antes: 7 * DIA,
+      motivos: [
+        ["EN_EJECUCION", 0, laura, "Orden creada"],
+        ["FALLIDA", 30_000, SISTEMA, "Falló el envío al proveedor"],
+      ],
+    }),
+    nueva(8, "TSLA", "VENTA", "LIMIT", 1, 300.0, {
+      estado: "DETENIDA",
+      antes: 4 * DIA,
+      motivos: [
+        ["PENDIENTE", 0, laura, "Orden creada"],
+        ["DETENIDA", HORA, SISTEMA, "Acción detenida por el mercado"],
+      ],
+    }),
   ];
 }
 
@@ -185,14 +213,16 @@ const SALDOS_INICIALES = {
 export function crearEstadoTrading() {
   return {
     ordenes: semillas(),
-    /** Idempotency-Key → { huella, cuerpo } */
+    /** `usuarioId:Idempotency-Key` → { huella, status, cuerpo } (única por cuenta, no expira). */
     idempotencia: new Map(),
+    /** autorizacionId → { usuarioId, cuerpo, expira, resultado } (doble autorización). */
+    autorizaciones: new Map(),
     saldos: JSON.parse(JSON.stringify(SALDOS_INICIALES)),
-    /** usuarioId → ticker → { cantidad, precioCompra } (cambios sobre las posiciones base). */
+    /** usuarioId → ticker → { cantidad, precio } (cambios sobre las posiciones base). */
     tenencias: new Map(),
     /** null = según horario real; true/false fuerza el mercado abierto/cerrado. */
     mercadoForzado: null,
-    /** ms que tarda una orden de mercado en pasar de EN_EJECUCION a EJECUTADA. */
+    /** ms que tarda una orden de mercado en ejecutarse completa. */
     ejecucionMs: 3000,
     /** Errores forzados: { codigo, status, veces, ruta? } */
     fallos: [],
@@ -273,34 +303,23 @@ function validarSolicitud(cuerpo) {
 
 function calcular(cuerpo, accion) {
   const precio = cuerpo.tipo === "LIMIT" ? Number(cuerpo.precioLimite) : accion.precio;
-  const total = redondear(cuerpo.cantidad * precio);
-  const comision = redondear((total * PORCENTAJE_COMISION) / 100);
-  const compra = cuerpo.lado === "COMPRA";
-  return {
-    precio,
-    total,
-    comision,
-    totalADescontar: redondear(compra ? total + comision : total - comision),
-  };
+  return { precio, ...calcularTotales(cuerpo.lado, cuerpo.cantidad, precio) };
 }
 
-function vistaComision(valor) {
+/** [Definido] 60 % plataforma / 40 % comisionista si hay comisionista; si no, 100 % plataforma. */
+function vistaComision(valor, conComisionista) {
+  const comisionista = conComisionista ? redondear(valor * PARTE_COMISIONISTA) : 0;
   return {
     porcentaje: monto(PORCENTAJE_COMISION),
     valor: monto(valor),
-    valorPlataforma: monto(valor),
-    valorComisionista: "0.00",
+    valorPlataforma: monto(valor - comisionista),
+    valorComisionista: monto(comisionista),
   };
-}
-
-function mercadoDe(accion) {
-  const mercado = MERCADOS.find((m) => m.codigo === accion.mercado);
-  return mercado;
 }
 
 /** Prioridad: `ordenes.mercado()` (global) > `mercadoAbierto(codigo)` del panel > horario real. */
 function estadoMercado(trading, accion, forzadoPorMercado = {}) {
-  const estado = estadoDeMercado(mercadoDe(accion));
+  const estado = estadoDeMercado(MERCADOS.find((m) => m.codigo === accion.mercado));
   const abierto = trading.mercadoForzado ?? forzadoPorMercado[accion.mercado];
   if (abierto === undefined || abierto === null) return estado;
   return {
@@ -315,69 +334,113 @@ function estadoMercado(trading, accion, forzadoPorMercado = {}) {
 
 // ------------------------------------------------------------ transiciones
 
+const cantidadEjecutada = (orden) => orden.ejecuciones.reduce((s, e) => s + e.cantidad, 0);
+
 function registrar(orden, estado, actor, motivo) {
-  const fecha = new Date().toISOString();
+  const entrada = entradaHistorial(estado, new Date().toISOString(), actor, motivo, orden.ticker);
   orden.estado = estado;
-  orden.actualizadaEn = fecha;
-  orden.historial.push({ estado, fecha, actor, motivo });
+  orden.actualizadaEn = entrada.fecha;
+  orden.historial.push(entrada);
 }
 
-const SISTEMA = { tipo: "SISTEMA", nombre: "Motor de órdenes" };
+/** Devuelve a disponible lo que una compra tenía reservado. */
+function liberarReserva(trading, orden) {
+  let liberado = 0;
+  if (orden.lado === "COMPRA" && orden.valorRestante > 0) {
+    liberado = orden.valorRestante;
+    const saldo = trading.saldos[orden.usuarioId];
+    if (saldo) {
+      saldo.reservado = redondear(Math.max(0, saldo.reservado - liberado));
+      saldo.disponible = redondear(saldo.disponible + liberado);
+    }
+  }
+  orden.valorRestante = 0;
+  return liberado;
+}
 
-function ejecutar(trading, orden, usuario) {
-  const saldo = trading.saldos[orden.usuarioId];
+/** Ejecuta `cantidad` acciones de la orden: mueve saldo y posición y deja la ejecución aparte. */
+function ejecutarTramo(trading, orden, cantidad) {
   const accion = resolverAccion(orden.ticker);
   const precio = orden.tipo === "LIMIT" ? Number(orden.precioLimite) : accion.precio;
+  const pendiente = orden.cantidad - cantidadEjecutada(orden);
+  const qty = Math.min(cantidad, pendiente);
+  if (qty <= 0) return 0;
+  const saldo = trading.saldos[orden.usuarioId];
+  const completa = qty === pendiente;
+  const parte = completa
+    ? orden.valorRestante
+    : redondear((orden.totalDescontado * qty) / orden.cantidad);
+  orden.valorRestante = redondear(orden.valorRestante - parte);
+
   const cambios = trading.tenencias.get(orden.usuarioId) ?? new Map();
   const previo = cambios.get(orden.ticker) ?? { cantidad: 0, precio: 0 };
   if (orden.lado === "COMPRA") {
-    if (saldo) saldo.reservado = redondear(Math.max(0, saldo.reservado - orden.totalDescontado));
-    cambios.set(orden.ticker, {
-      cantidad: previo.cantidad + orden.cantidad,
-      precio: precio,
-    });
+    if (saldo) saldo.reservado = redondear(Math.max(0, saldo.reservado - parte));
+    cambios.set(orden.ticker, { cantidad: previo.cantidad + qty, precio });
   } else {
-    if (saldo) saldo.disponible = redondear(saldo.disponible + orden.totalDescontado);
-    cambios.set(orden.ticker, {
-      cantidad: previo.cantidad - orden.cantidad,
-      precio: previo.precio,
-    });
+    if (saldo) saldo.disponible = redondear(saldo.disponible + parte);
+    cambios.set(orden.ticker, { cantidad: previo.cantidad - qty, precio: previo.precio });
   }
   trading.tenencias.set(orden.usuarioId, cambios);
-  orden.reservado = false;
-  orden.precioEjecucion = monto(precio);
-  registrar(orden, "EJECUTADA", SISTEMA, "Ejecutada a precio de mercado");
-  void usuario;
+
+  orden.ejecuciones.push({ cantidad: qty, precio: monto(precio), fecha: new Date().toISOString() });
+  if (orden.estado !== ESTADO_AL_EJECUTAR) {
+    registrar(orden, ESTADO_AL_EJECUTAR, SISTEMA, completa ? "Ejecutada" : "Ejecución parcial");
+  } else {
+    orden.actualizadaEn = new Date().toISOString();
+  }
+  return qty;
 }
 
-/** Avanza lo que corresponda por tiempo: EN_EJECUCION → EJECUTADA pasado `ejecucionMs`. */
+/** Avanza por tiempo: una orden EN_EJECUCION sin ejecuciones se ejecuta completa tras `ejecucionMs`. */
 export function avanzarOrdenes(trading) {
   const ahora = Date.now();
   for (const orden of trading.ordenes) {
     if (
       orden.estado === "EN_EJECUCION" &&
+      orden.ejecuciones.length === 0 &&
       ahora - Date.parse(orden.actualizadaEn) >= trading.ejecucionMs
     ) {
-      ejecutar(trading, orden);
+      ejecutarTramo(trading, orden, orden.cantidad);
     }
   }
 }
 
-/** Ejecuta ya las órdenes PENDIENTE / EN_EJECUCION del mock (para demos y pruebas). */
+const EJECUTABLES = new Set(["PENDIENTE", "ENVIADA", "EN_EJECUCION"]);
+
+/** Ejecuta ya lo que falte de las órdenes PENDIENTE, ENVIADA y EN_EJECUCION. Devuelve cuántas. */
 export function ejecutarPendientes(trading) {
   let n = 0;
   for (const orden of trading.ordenes) {
-    if (["PENDIENTE", "EN_EJECUCION"].includes(orden.estado)) {
-      ejecutar(trading, orden);
-      n += 1;
-    }
+    if (EJECUTABLES.has(orden.estado) && ejecutarTramo(trading, orden, orden.cantidad) > 0) n += 1;
   }
   return n;
+}
+
+/** Ejecuta la mitad (mínimo 1) de la primera orden ejecutable con 2+ acciones por ejecutar. */
+export function ejecutarParcial(trading) {
+  const orden = trading.ordenes.find(
+    (o) => EJECUTABLES.has(o.estado) && o.cantidad - cantidadEjecutada(o) >= 2
+  );
+  if (!orden) return 0;
+  return ejecutarTramo(trading, orden, Math.floor((orden.cantidad - cantidadEjecutada(orden)) / 2));
+}
+
+/** Fuerza el estado de una orden (para ver las 10 variantes en pantalla). */
+export function forzarEstado(trading, id, estado, motivo = "Estado forzado desde el mock") {
+  const orden = trading.ordenes.find((o) => o.id === id);
+  if (!orden) return false;
+  if (!ESTADOS_ORDEN.includes(estado)) throw new Error(`Estado desconocido: ${estado}`);
+  if (LIBERAN_FONDOS.has(estado)) liberarReserva(trading, orden);
+  registrar(orden, estado, SISTEMA, motivo);
+  return true;
 }
 
 // -------------------------------------------------------------------- vistas
 
 function vistaOrden(orden) {
+  const ejecutada = cantidadEjecutada(orden);
+  const importe = orden.ejecuciones.reduce((s, e) => s + e.cantidad * Number(e.precio), 0);
   return {
     id: orden.id,
     ticker: orden.ticker,
@@ -387,12 +450,16 @@ function vistaOrden(orden) {
     precioLimite: orden.precioLimite,
     precioStop: orden.precioStop,
     precioEstimado: orden.precioEstimado,
-    precioEjecucion: orden.precioEjecucion,
+    cantidadEjecutada: ejecutada,
+    precioEjecucion: ejecutada ? monto(importe / ejecutada) : null,
+    ejecuciones: orden.ejecuciones,
     totalTransaccion: orden.totalTransaccion,
-    comision: vistaComision(orden.comisionValor),
+    comision: vistaComision(orden.comisionValor, orden.conComisionista),
     totalDescontado: monto(orden.totalDescontado),
     estado: orden.estado,
     encolada: orden.encolada,
+    validadaPor: orden.validadaPor,
+    validadaEn: orden.validadaEn,
     creadaEn: orden.creadaEn,
     actualizadaEn: orden.actualizadaEn,
   };
@@ -409,7 +476,7 @@ export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina,
   const CON_ORDENES = ["INVERSIONISTA"];
 
   /** Aplica latencia extra y errores forzados antes del resolver real. */
-  const conSimulacion = (ruta, resolver) => async (contexto) => {
+  const conSimulacion = (resolver) => async (contexto) => {
     const t = trading();
     if (t.latenciaExtraMs) await new Promise((r) => setTimeout(r, t.latenciaExtraMs));
     const indice = t.fallos.findIndex((f) => !f.ruta || contexto.request.url.includes(f.ruta));
@@ -421,299 +488,347 @@ export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina,
         datos: fallo.datos,
       });
     }
-    void ruta;
     return resolver(contexto);
   };
+  const ruta = (roles, resolver) => protegido(roles, (ctx) => conSimulacion(resolver)(ctx));
 
   const ordenDelUsuario = (usuario, id) =>
     trading().ordenes.find((o) => o.id === id && o.usuarioId === usuario.id);
 
+  /** [Propuesta] Orden de otro usuario: 404, para no revelar que existe. */
   const noEncontrada = (request) =>
     error(request, 404, "NO_ENCONTRADO", "La orden no existe o no te pertenece.");
+
+  /** Validaciones de negocio previas a crear. Devuelve `{ respuesta }` o `{ accion, c, mercado }`. */
+  function verificar(request, usuario, cuerpo) {
+    const t = trading();
+    const { detalles, accion } = validarSolicitud(cuerpo);
+    if (detalles.length) {
+      return {
+        respuesta: error(request, 400, "VALIDACION_FALLIDA", "Revisa los datos de la orden.", {
+          detalles,
+        }),
+      };
+    }
+    const c = calcular(cuerpo, accion);
+    const mercado = estadoMercado(t, accion, db.simulacion?.mercadoAbierto);
+    const saldo = t.saldos[usuario.id] ?? { disponible: 0, reservado: 0 };
+    const compra = cuerpo.lado === "COMPRA";
+
+    if (!mercado.abierto && cuerpo.confirmarEncolamiento !== true) {
+      return {
+        respuesta: error(
+          request,
+          409,
+          "MERCADO_CERRADO",
+          `El mercado ${accion.mercado} está cerrado.`,
+          { datos: { mercado: accion.mercado, proximaApertura: mercado.proximaApertura } }
+        ),
+      };
+    }
+    if (compra && saldo.disponible < c.totalDescontado) {
+      return {
+        respuesta: error(request, 422, "FONDOS_INSUFICIENTES", "No tienes fondos suficientes."),
+      };
+    }
+    if (!compra && cantidadTenida(t, usuario, posicionesBase, accion.ticker) < cuerpo.cantidad) {
+      return {
+        respuesta: error(request, 422, "ACCIONES_INSUFICIENTES", "No tienes suficientes acciones."),
+      };
+    }
+    const op = usuario.preferencias?.operaciones ?? {};
+    const hoy = new Date().toDateString();
+    const usadoHoy = t.ordenes
+      .filter(
+        (o) =>
+          o.usuarioId === usuario.id &&
+          !LIBERAN_FONDOS.has(o.estado) &&
+          new Date(o.creadaEn).toDateString() === hoy
+      )
+      .reduce((s, o) => s + Number(o.totalTransaccion), 0);
+    if (op.limiteDiario && usadoHoy + c.total > Number(op.limiteDiario)) {
+      return {
+        respuesta: error(
+          request,
+          422,
+          "LIMITE_DIARIO_EXCEDIDO",
+          "Superas tu límite diario de operación.",
+          { datos: { limiteDiario: op.limiteDiario, usadoHoy: monto(usadoHoy) } }
+        ),
+      };
+    }
+    return { accion, c, mercado, compra, op };
+  }
+
+  /** Crea la orden, reserva fondos y arma la respuesta 201. */
+  function registrarOrden(request, usuario, cuerpo, { accion, c, mercado, compra }, validacion) {
+    const t = trading();
+    const ahora = new Date().toISOString();
+    const encolada = !mercado.abierto;
+    const enEjecucion = cuerpo.tipo === "MARKET" && !encolada;
+    const estado = enEjecucion ? "EN_EJECUCION" : "PENDIENTE";
+    const orden = {
+      id: nuevoUuid(),
+      usuarioId: usuario.id,
+      ticker: accion.ticker,
+      lado: cuerpo.lado,
+      tipo: cuerpo.tipo,
+      cantidad: cuerpo.cantidad,
+      precioLimite: cuerpo.tipo === "LIMIT" ? monto(cuerpo.precioLimite) : null,
+      precioStop: ["STOP_LOSS", "TAKE_PROFIT"].includes(cuerpo.tipo)
+        ? monto(cuerpo.precioStop)
+        : null,
+      precioEstimado: monto(c.precio),
+      totalTransaccion: monto(c.total),
+      comisionValor: c.comision,
+      conComisionista: Boolean(usuario.comisionista),
+      totalDescontado: c.totalDescontado,
+      valorRestante: c.totalDescontado,
+      estado,
+      encolada,
+      ejecuciones: [],
+      validadaPor: validacion?.por ?? null,
+      validadaEn: validacion?.en ?? null,
+      creadaEn: ahora,
+      actualizadaEn: ahora,
+      historial: [],
+    };
+    orden.historial.push(
+      entradaHistorial(
+        estado,
+        ahora,
+        { tipo: "USUARIO", id: usuario.id },
+        encolada ? "Orden encolada hasta la apertura del mercado" : "Orden creada",
+        accion.ticker
+      )
+    );
+    if (compra) {
+      const saldo = t.saldos[usuario.id] ?? { disponible: 0, reservado: 0 };
+      saldo.disponible = redondear(saldo.disponible - c.totalDescontado);
+      saldo.reservado = redondear(saldo.reservado + c.totalDescontado);
+      t.saldos[usuario.id] = saldo;
+    }
+    t.ordenes.unshift(orden);
+    const traceId = request.headers.get("X-Trace-Id") ?? nuevoUuid();
+    return {
+      id: orden.id,
+      estado,
+      encolada,
+      totalTransaccion: orden.totalTransaccion,
+      comision: vistaComision(c.comision, orden.conComisionista),
+      totalDescontado: monto(c.totalDescontado),
+      creadaEn: ahora,
+      traceId,
+    };
+  }
 
   return [
     rest.post(
       `${RAIZ}/ordenes/simulacion`,
-      protegido(["INVERSIONISTA", "COMISIONISTA"], (ctx) =>
-        conSimulacion("simulacion", async ({ request, usuario }) => {
-          const cuerpo = await leerCuerpo(request);
-          const { detalles, accion } = validarSolicitud(cuerpo);
-          if (detalles.length) {
-            return error(request, 400, "VALIDACION_FALLIDA", "Revisa los datos de la orden.", {
-              detalles,
-            });
-          }
-          const c = calcular(cuerpo, accion);
-          const mercado = estadoMercado(trading(), accion, db.simulacion?.mercadoAbierto);
-          const saldo = saldoDe(trading(), usuario);
-          const fondosSuficientes =
-            cuerpo.lado === "COMPRA"
-              ? saldo.disponible >= c.totalADescontar
-              : cantidadTenida(trading(), usuario, posicionesBase, accion.ticker) >=
-                cuerpo.cantidad;
-          return HttpResponse.json({
-            precioEstimado: monto(c.precio),
-            totalTransaccion: monto(c.total),
-            comision: vistaComision(c.comision),
-            totalADescontar: monto(c.totalADescontar),
-            fondosSuficientes,
-            mercadoAbierto: mercado.abierto,
-            proximaApertura: mercado.proximaApertura,
+      ruta(["INVERSIONISTA", "COMISIONISTA"], async ({ request, usuario }) => {
+        const cuerpo = await leerCuerpo(request);
+        const { detalles, accion } = validarSolicitud(cuerpo);
+        if (detalles.length) {
+          return error(request, 400, "VALIDACION_FALLIDA", "Revisa los datos de la orden.", {
+            detalles,
           });
-        })(ctx)
-      )
+        }
+        const c = calcular(cuerpo, accion);
+        const mercado = estadoMercado(trading(), accion, db.simulacion?.mercadoAbierto);
+        const saldo = saldoDe(trading(), usuario);
+        const fondosSuficientes =
+          cuerpo.lado === "COMPRA"
+            ? saldo.disponible >= c.totalDescontado
+            : cantidadTenida(trading(), usuario, posicionesBase, accion.ticker) >= cuerpo.cantidad;
+        return HttpResponse.json({
+          precioEstimado: monto(c.precio),
+          totalTransaccion: monto(c.total),
+          comision: vistaComision(c.comision, Boolean(usuario.comisionista)),
+          totalADescontar: monto(c.totalDescontado),
+          fondosSuficientes,
+          mercadoAbierto: mercado.abierto,
+          proximaApertura: mercado.proximaApertura,
+        });
+      })
     ),
 
     rest.post(
       `${RAIZ}/ordenes`,
-      protegido(CON_ORDENES, (ctx) =>
-        conSimulacion("crear", async ({ request, usuario }) => {
-          const t = trading();
-          const clave = request.headers.get("Idempotency-Key");
-          if (!clave) {
-            return error(request, 400, "VALIDACION_FALLIDA", "Falta la cabecera Idempotency-Key.", {
-              detalles: [{ campo: "Idempotency-Key", mensaje: "Es obligatoria." }],
-            });
-          }
-          const cuerpo = await leerCuerpo(request);
-          const huella = JSON.stringify(cuerpo);
-          const previa = t.idempotencia.get(`${usuario.id}:${clave}`);
-          if (previa) {
-            if (previa.huella !== huella) {
-              return error(
-                request,
-                409,
-                "CONFLICTO_IDEMPOTENCIA",
-                "La Idempotency-Key ya se usó con otra solicitud."
-              );
-            }
-            return HttpResponse.json(previa.cuerpo, { status: 201 });
-          }
-
-          const { detalles, accion } = validarSolicitud(cuerpo);
-          if (detalles.length) {
-            return error(request, 400, "VALIDACION_FALLIDA", "Revisa los datos de la orden.", {
-              detalles,
-            });
-          }
-          const c = calcular(cuerpo, accion);
-          const mercado = estadoMercado(t, accion, db.simulacion?.mercadoAbierto);
-          const saldo = t.saldos[usuario.id] ?? { disponible: 0, reservado: 0 };
-          const compra = cuerpo.lado === "COMPRA";
-
-          if (!mercado.abierto && cuerpo.confirmarEncolamiento !== true) {
+      ruta(CON_ORDENES, async ({ request, usuario }) => {
+        const t = trading();
+        const clave = request.headers.get("Idempotency-Key");
+        if (!clave) {
+          return error(request, 400, "VALIDACION_FALLIDA", "Falta la cabecera Idempotency-Key.", {
+            detalles: [{ campo: "Idempotency-Key", mensaje: "Es obligatoria." }],
+          });
+        }
+        const cuerpo = await leerCuerpo(request);
+        const huella = JSON.stringify(cuerpo);
+        const llave = `${usuario.id}:${clave}`;
+        // [Definido] la clave es única por cuenta y no expira; [Propuesta] misma clave + mismo
+        // cuerpo devuelve la misma respuesta; con otro cuerpo, 409.
+        const previa = t.idempotencia.get(llave);
+        if (previa) {
+          if (previa.huella !== huella) {
             return error(
               request,
               409,
-              "MERCADO_CERRADO",
-              `El mercado ${accion.mercado} está cerrado.`,
-              {
-                datos: { mercado: accion.mercado, proximaApertura: mercado.proximaApertura },
-              }
+              "CONFLICTO_IDEMPOTENCIA",
+              "La Idempotency-Key ya se usó con otra solicitud."
             );
           }
-          const op = usuario.preferencias?.operaciones ?? {};
-          if (
-            op.dobleAutorizacion &&
-            c.total >= Number(op.umbralOrdenGrande ?? Infinity) &&
-            cuerpo.codigoAutorizacion !== CODIGO_AUTORIZACION_VALIDO
-          ) {
-            return error(
-              request,
-              403,
-              "DOBLE_AUTORIZACION_REQUERIDA",
-              "Esta orden supera el umbral y requiere un código de autorización."
-            );
-          }
-          if (compra && saldo.disponible < c.totalADescontar) {
-            return error(request, 422, "FONDOS_INSUFICIENTES", "No tienes fondos suficientes.");
-          }
-          if (!compra) {
-            const tenidas = cantidadTenida(t, usuario, posicionesBase, accion.ticker);
-            if (tenidas < cuerpo.cantidad) {
-              return error(
-                request,
-                422,
-                "ACCIONES_INSUFICIENTES",
-                "No tienes suficientes acciones."
-              );
-            }
-          }
-          const hoy = new Date().toDateString();
-          const usadoHoy = t.ordenes
-            .filter(
-              (o) =>
-                o.usuarioId === usuario.id &&
-                !["CANCELADA", "RECHAZADA"].includes(o.estado) &&
-                new Date(o.creadaEn).toDateString() === hoy
-            )
-            .reduce((s, o) => s + Number(o.totalTransaccion), 0);
-          if (op.limiteDiario && usadoHoy + c.total > Number(op.limiteDiario)) {
-            return error(
-              request,
-              422,
-              "LIMITE_DIARIO_EXCEDIDO",
-              "Superas tu límite diario de operación.",
-              {
-                datos: { limiteDiario: op.limiteDiario, usadoHoy: monto(usadoHoy) },
-              }
-            );
-          }
+          return HttpResponse.json(previa.cuerpo, { status: previa.status });
+        }
 
-          const encolada = !mercado.abierto;
-          const enEjecucion = cuerpo.tipo === "MARKET" && !encolada;
-          const ahora = new Date().toISOString();
-          const orden = {
-            id: nuevoUuid(),
+        const verificacion = verificar(request, usuario, cuerpo);
+        if (verificacion.respuesta) return verificacion.respuesta;
+        const { c, op } = verificacion;
+
+        // [Propuesta] Orden grande con doble autorización: 202 y se confirma en /ordenes/autorizar.
+        if (op.dobleAutorizacion && c.total >= Number(op.umbralOrdenGrande ?? Infinity)) {
+          const autorizacionId = nuevoUuid();
+          t.autorizaciones.set(autorizacionId, {
             usuarioId: usuario.id,
-            ticker: accion.ticker,
-            lado: cuerpo.lado,
-            tipo: cuerpo.tipo,
-            cantidad: cuerpo.cantidad,
-            precioLimite: cuerpo.tipo === "LIMIT" ? monto(cuerpo.precioLimite) : null,
-            precioStop: ["STOP_LOSS", "TAKE_PROFIT"].includes(cuerpo.tipo)
-              ? monto(cuerpo.precioStop)
-              : null,
-            precioEstimado: monto(c.precio),
-            precioEjecucion: null,
-            totalTransaccion: monto(c.total),
-            comisionValor: c.comision,
-            totalDescontado: c.totalADescontar,
-            estado: enEjecucion ? "EN_EJECUCION" : "PENDIENTE",
-            encolada,
-            saldoLiberado: "0.00",
-            reservado: compra,
-            creadaEn: ahora,
-            actualizadaEn: ahora,
-            historial: [],
-          };
-          orden.historial.push({
-            estado: orden.estado,
-            fecha: ahora,
-            actor: { tipo: "USUARIO", nombre: usuario.nombre },
-            motivo: encolada ? "Orden encolada hasta la apertura del mercado" : "Orden creada",
+            cuerpo,
+            llave,
+            expira: Date.now() + VIGENCIA_AUTORIZACION_MS,
+            resultado: null,
           });
-          if (compra) {
-            saldo.disponible = redondear(saldo.disponible - c.totalADescontar);
-            saldo.reservado = redondear(saldo.reservado + c.totalADescontar);
-            t.saldos[usuario.id] = saldo;
-          }
-          t.ordenes.unshift(orden);
+          const pendiente = { requiereAutorizacion: true, autorizacionId };
+          t.idempotencia.set(llave, { huella, status: 202, cuerpo: pendiente });
+          return HttpResponse.json(pendiente, { status: 202 });
+        }
 
-          const traceId = request.headers.get("X-Trace-Id") ?? nuevoUuid();
-          const cuerpoRespuesta = {
-            id: orden.id,
-            estado: orden.estado,
-            encolada,
-            totalTransaccion: orden.totalTransaccion,
-            comision: vistaComision(c.comision),
-            totalDescontado: monto(c.totalADescontar),
-            creadaEn: ahora,
-            traceId,
-          };
-          t.idempotencia.set(`${usuario.id}:${clave}`, { huella, cuerpo: cuerpoRespuesta });
-          return HttpResponse.json(cuerpoRespuesta, {
-            status: 201,
-            headers: { "X-Trace-Id": traceId },
-          });
-        })(ctx)
-      )
+        const respuesta = registrarOrden(request, usuario, cuerpo, verificacion);
+        t.idempotencia.set(llave, { huella, status: 201, cuerpo: respuesta });
+        return HttpResponse.json(respuesta, {
+          status: 201,
+          headers: { "X-Trace-Id": respuesta.traceId },
+        });
+      })
+    ),
+
+    /** [Propuesta] Confirma una orden pendiente de doble autorización. */
+    rest.post(
+      `${RAIZ}/ordenes/autorizar`,
+      ruta(CON_ORDENES, async ({ request, usuario }) => {
+        const t = trading();
+        const cuerpo = await leerCuerpo(request);
+        const detalles = [];
+        if (!cuerpo.autorizacionId)
+          detalles.push({ campo: "autorizacionId", mensaje: "Es obligatorio." });
+        if (!cuerpo.codigoAutorizacion)
+          detalles.push({ campo: "codigoAutorizacion", mensaje: "Es obligatorio." });
+        if (detalles.length) {
+          return error(request, 400, "VALIDACION_FALLIDA", "Revisa los datos.", { detalles });
+        }
+        const auth = t.autorizaciones.get(cuerpo.autorizacionId);
+        if (!auth || auth.usuarioId !== usuario.id) {
+          return error(request, 404, "NO_ENCONTRADO", "La autorización no existe.");
+        }
+        if (auth.resultado) return HttpResponse.json(auth.resultado, { status: 201 });
+        // ⚠ El backend solo dijo «422»; el código del error no está definido.
+        if (auth.expira <= Date.now() || cuerpo.codigoAutorizacion !== CODIGO_AUTORIZACION_VALIDO) {
+          return error(
+            request,
+            422,
+            "CODIGO_AUTORIZACION_INVALIDO",
+            "El código de autorización es inválido o venció."
+          );
+        }
+        const verificacion = verificar(request, usuario, auth.cuerpo);
+        if (verificacion.respuesta) return verificacion.respuesta;
+        const respuesta = registrarOrden(request, usuario, auth.cuerpo, verificacion, {
+          por: usuario.id,
+          en: new Date().toISOString(),
+        });
+        auth.resultado = respuesta;
+        const guardada = t.idempotencia.get(auth.llave);
+        if (guardada) Object.assign(guardada, { status: 201, cuerpo: respuesta });
+        return HttpResponse.json(respuesta, {
+          status: 201,
+          headers: { "X-Trace-Id": respuesta.traceId },
+        });
+      })
     ),
 
     rest.get(
       `${RAIZ}/ordenes`,
-      protegido(CON_ORDENES, (ctx) =>
-        conSimulacion("listar", async ({ request, usuario }) => {
-          avanzarOrdenes(trading());
-          const url = new URL(request.url);
-          const q = (n) => url.searchParams.get(n);
-          const desde = q("desde") ? Date.parse(q("desde")) : null;
-          const hasta = q("hasta") ? Date.parse(q("hasta")) : null;
-          if ((q("desde") && Number.isNaN(desde)) || (q("hasta") && Number.isNaN(hasta))) {
-            return error(request, 400, "VALIDACION_FALLIDA", "Fechas inválidas.", {
-              detalles: [{ campo: "desde/hasta", mensaje: "Usa formato ISO 8601." }],
-            });
-          }
-          const lista = trading()
-            .ordenes.filter((o) => o.usuarioId === usuario.id)
-            .filter((o) => !q("estado") || o.estado === q("estado"))
-            .filter((o) => !q("ticker") || o.ticker === q("ticker").toUpperCase())
-            .filter((o) => !q("lado") || o.lado === q("lado"))
-            .filter((o) => desde === null || Date.parse(o.creadaEn) >= desde)
-            .filter((o) => hasta === null || Date.parse(o.creadaEn) <= hasta)
-            .sort((a, b) => Date.parse(b.creadaEn) - Date.parse(a.creadaEn))
-            .map(vistaOrden);
-          return HttpResponse.json(pagina(lista, url));
-        })(ctx)
-      )
+      ruta(CON_ORDENES, async ({ request, usuario }) => {
+        avanzarOrdenes(trading());
+        const url = new URL(request.url);
+        const q = (n) => url.searchParams.get(n);
+        const desde = q("desde") ? Date.parse(q("desde")) : null;
+        const hasta = q("hasta") ? Date.parse(q("hasta")) : null;
+        if ((q("desde") && Number.isNaN(desde)) || (q("hasta") && Number.isNaN(hasta))) {
+          return error(request, 400, "VALIDACION_FALLIDA", "Fechas inválidas.", {
+            detalles: [{ campo: "desde/hasta", mensaje: "Usa formato ISO 8601." }],
+          });
+        }
+        const lista = trading()
+          .ordenes.filter((o) => o.usuarioId === usuario.id)
+          .filter((o) => !q("estado") || o.estado === q("estado"))
+          .filter((o) => !q("ticker") || o.ticker === q("ticker").toUpperCase())
+          .filter((o) => !q("lado") || o.lado === q("lado"))
+          .filter((o) => desde === null || Date.parse(o.creadaEn) >= desde)
+          .filter((o) => hasta === null || Date.parse(o.creadaEn) <= hasta)
+          .sort((a, b) => Date.parse(b.creadaEn) - Date.parse(a.creadaEn))
+          .map(vistaOrden);
+        return HttpResponse.json(pagina(lista, url));
+      })
     ),
 
     rest.get(
       `${RAIZ}/ordenes/:id/historial`,
-      protegido(CON_ORDENES, (ctx) =>
-        conSimulacion("historial", async ({ request, usuario, params }) => {
-          avanzarOrdenes(trading());
-          const orden = ordenDelUsuario(usuario, params.id);
-          if (!orden) return noEncontrada(request);
-          return HttpResponse.json({ ordenId: orden.id, estados: orden.historial });
-        })(ctx)
-      )
+      ruta(CON_ORDENES, async ({ request, usuario, params }) => {
+        avanzarOrdenes(trading());
+        const orden = ordenDelUsuario(usuario, params.id);
+        if (!orden) return noEncontrada(request);
+        // [Propuesta] de la entrada más antigua a la más reciente.
+        return HttpResponse.json({ ordenId: orden.id, estados: orden.historial });
+      })
     ),
 
     rest.get(
       `${RAIZ}/ordenes/:id`,
-      protegido(CON_ORDENES, (ctx) =>
-        conSimulacion("detalle", async ({ request, usuario, params }) => {
-          avanzarOrdenes(trading());
-          const orden = ordenDelUsuario(usuario, params.id);
-          if (!orden) return noEncontrada(request);
-          return HttpResponse.json(vistaOrden(orden));
-        })(ctx)
-      )
+      ruta(CON_ORDENES, async ({ request, usuario, params }) => {
+        avanzarOrdenes(trading());
+        const orden = ordenDelUsuario(usuario, params.id);
+        if (!orden) return noEncontrada(request);
+        return HttpResponse.json(vistaOrden(orden));
+      })
     ),
 
     rest.post(
       `${RAIZ}/ordenes/:id/cancelar`,
-      protegido(CON_ORDENES, (ctx) =>
-        conSimulacion("cancelar", async ({ request, usuario, params }) => {
-          const t = trading();
-          avanzarOrdenes(t);
-          const orden = ordenDelUsuario(usuario, params.id);
-          if (!orden) return noEncontrada(request);
-          if (!CANCELABLES.has(orden.estado)) {
-            return error(
-              request,
-              409,
-              "ORDEN_NO_CANCELABLE",
-              `Una orden en estado ${orden.estado} no se puede cancelar.`,
-              { datos: { estado: orden.estado } }
-            );
-          }
-          let liberado = 0;
-          if (orden.lado === "COMPRA" && orden.reservado) {
-            const saldo = t.saldos[usuario.id];
-            liberado = orden.totalDescontado;
-            if (saldo) {
-              saldo.reservado = redondear(Math.max(0, saldo.reservado - liberado));
-              saldo.disponible = redondear(saldo.disponible + liberado);
-            }
-            orden.reservado = false;
-          }
-          orden.saldoLiberado = monto(liberado);
-          registrar(
-            orden,
-            "CANCELADA",
-            { tipo: "USUARIO", nombre: usuario.nombre },
-            "Cancelada por el usuario"
+      ruta(CON_ORDENES, async ({ request, usuario, params }) => {
+        const t = trading();
+        avanzarOrdenes(t);
+        const orden = ordenDelUsuario(usuario, params.id);
+        if (!orden) return noEncontrada(request);
+        if (!CANCELABLES.has(orden.estado)) {
+          return error(
+            request,
+            409,
+            "ORDEN_NO_CANCELABLE",
+            `Una orden en estado ${orden.estado} no se puede cancelar.`,
+            { datos: { estado: orden.estado } }
           );
-          return HttpResponse.json({
-            id: orden.id,
-            estado: "CANCELADA",
-            saldoLiberado: monto(liberado),
-            traceId: request.headers.get("X-Trace-Id") ?? nuevoUuid(),
-          });
-        })(ctx)
-      )
+        }
+        const liberado = liberarReserva(t, orden);
+        registrar(
+          orden,
+          "CANCELADA",
+          { tipo: "USUARIO", id: usuario.id },
+          "Cancelada por el usuario"
+        );
+        return HttpResponse.json({
+          id: orden.id,
+          estado: "CANCELADA",
+          saldoLiberado: monto(liberado),
+          traceId: request.headers.get("X-Trace-Id") ?? nuevoUuid(),
+        });
+      })
     ),
   ];
 }
@@ -725,8 +840,14 @@ export function utilidadesOrdenes(db) {
     mercado: (abierto) => {
       db.trading.mercadoForzado = abierto;
     },
-    /** Ejecuta ya las órdenes pendientes y en ejecución. Devuelve cuántas. */
+    /** Ejecuta ya lo que falte de las órdenes pendientes y en ejecución. Devuelve cuántas. */
     ejecutarPendientes: () => ejecutarPendientes(db.trading),
+    /** Ejecuta la mitad de una orden (ejecución parcial). Devuelve las acciones ejecutadas. */
+    ejecutarParcial: () => ejecutarParcial(db.trading),
+    /** Fuerza el estado de una orden por id (uno de los 10 estados). */
+    estado: (id, estado, motivo) => forzarEstado(db.trading, id, estado, motivo),
+    /** Ids de las órdenes con su estado, para usar con `estado()`. */
+    listar: () => db.trading.ordenes.map((o) => ({ id: o.id, ticker: o.ticker, estado: o.estado })),
     /** La siguiente(s) `veces` llamada(s) a órdenes fallan con ese código del catálogo. */
     fallar: (codigo, { veces = 1, ruta, mensaje } = {}) => {
       db.trading.fallos.push({

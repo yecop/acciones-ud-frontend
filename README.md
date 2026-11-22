@@ -222,8 +222,8 @@ y cancelar libera el saldo. Cliente: `src/api/ordenesApi.js`. Las formas que el 
 define (listas, historial, estados) están en [docs/trading-mock.md](docs/trading-mock.md).
 
 Desde la consola del navegador (`npm start`): `window.__mock.ordenes.mercado(false)` (cierra el
-mercado), `.ejecutarPendientes()`, `.fallar("PROVEEDOR_NO_DISPONIBLE")`, `.latencia(2000)` y
-`.limpiar()`. Cuenta con órdenes de ejemplo: `laura@`; estado vacío: `nuevo@`.
+mercado), `.ejecutarPendientes()`, `.ejecutarParcial()`, `.estado(id, "ENVIADA")`,
+`.fallar("PROVEEDOR_NO_DISPONIBLE")`, `.latencia(2000)` y `.limpiar()`. Cuenta con órdenes de ejemplo: `laura@`; estado vacío: `nuevo@`.
 
 **Cambiar entre mock y API real:** no hay código que tocar, solo el comando. `npm start` usa el
 mock (`.env.mock`, `VITE_USE_MOCK=true`); `npm run dev` usa el backend definido en
