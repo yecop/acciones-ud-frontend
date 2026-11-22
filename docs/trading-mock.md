@@ -1,0 +1,61 @@
+# SCRUM-35: mock de trading — órdenes (parte 1)
+
+Fuente: respuestas del backend (22-nov). Cada punto va marcado como **[Definido]** (ya está en el esquema de la base de datos o en Jira) o **[Propuesta]** (falta acordarlo con backend: úsese para el mock, puede cambiar). Lo que backend no respondió se marca ⚠. Órdenes (SCRUM-38), propuestas, notificaciones y comisionistas (SCRUM-53, 51 y 52) siguen pendientes de su lado.
+
+## Endpoints (`src/mocks/ordenes.js`, cliente `src/api/ordenesApi.js`)
+
+| Endpoint                      | Roles    | Origen de la forma                                                                           |
+| ----------------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| `POST /ordenes/simulacion`    | INV, COM | Contrato                                                                                     |
+| `POST /ordenes`               | INV      | Contrato; 202 con doble autorización es [Propuesta]. COM con `clienteId`: parte comisionista |
+| `POST /ordenes/autorizar`     | INV      | [Propuesta]                                                                                  |
+| `GET /ordenes`                | INV      | Filtros del contrato; lista paginada [Propuesta]                                             |
+| `GET /ordenes/{id}`           | INV      | ⚠ Forma de la orden supuesta                                                                |
+| `GET /ordenes/{id}/historial` | INV      | Contenido [Definido]; envoltorio [Propuesta]                                                 |
+| `POST /ordenes/{id}/cancelar` | INV      | Contrato; estados cancelables [Propuesta]                                                    |
+
+## Reglas
+
+1. **Convenciones [Definido]:** prefijo `/api/v1`; montos como texto con 2 decimales; errores en el formato estándar con `traceId`.
+2. **Estados de orden [Definido]:** `PENDIENTE, ENVIADA, FIRMADA_POR_COMISIONISTA, EN_EJECUCION, CANCELADA, RECHAZADA, EXPIRADA, EN_REVISION, FALLIDA, DETENIDA`. **No existe `EJECUTADA`:** las ejecuciones (también las parciales) van aparte, con cantidad, precio y fecha. El mock las expone en `ejecuciones`, `cantidadEjecutada` y `precioEjecucion` (promedio).
+3. **Tipos [Definido]:** `MARKET, LIMIT, STOP_LOSS, TAKE_PROFIT`; `lado` COMPRA o VENTA; `cantidad` entero ≥ 1; `precioLimite` y `precioStop` opcionales según el tipo.
+4. **Cancelación [Propuesta]:** solo en `PENDIENTE` o `EN_REVISION`; en otro estado, 409 `ORDEN_NO_CANCELABLE`.
+5. **Transiciones ⚠:** no están definidas. El mock solo mueve a `EN_EJECUCION` al ejecutar y a `CANCELADA` al cancelar; el resto de estados se puede forzar con `window.__mock.ordenes.estado(id, estado)`.
+6. **Historial [Definido]:** cada cambio guarda estado, fecha, actor (null si fue el sistema), motivo, precio de referencia, bid, ask y `traceId`; es inmutable. **[Propuesta]** respuesta `{ ordenId, estados: [{ estado, fecha, actor: { tipo: "USUARIO" | "COMISIONISTA" | "SISTEMA", id | null }, motivo, precioReferencia }] }`, de la entrada más antigua a la más reciente (el mock añade `bid`, `ask` y `traceId`).
+7. **Orden de otro usuario [Propuesta]:** 404, para no revelar que existe.
+8. **Doble autorización:** **[Definido]** la orden guarda quién la validó y cuándo (`validadaPor`, `validadaEn`). **[Propuesta]** `POST /ordenes` responde `202 { requiereAutorizacion: true, autorizacionId }` sin crear la orden; se confirma con `POST /ordenes/autorizar { autorizacionId, codigoAutorizacion }` (201 con la orden). En el mock el código es `654321` y la autorización vence a los 5 min. Código inválido o vencido: 422 (⚠ el código del error no está definido; el mock usa `CODIGO_AUTORIZACION_INVALIDO`). Confirmar dos veces devuelve la misma orden.
+9. **Idempotencia:** **[Definido]** la clave es única por cuenta y no expira. **[Propuesta]** header `Idempotency-Key`; mismo cuerpo → mismo 201; cuerpo distinto → 409 `CONFLICTO_IDEMPOTENCIA`. Con 502/504 el cliente reintenta con la misma clave.
+10. **Comisión [Definido]:** 2,00 % del total de la transacción (configurable en el backend). Con comisionista: 60 % Acciones UD y 40 % comisionista; sin comisionista, 100 % plataforma.
+11. **Listas [Propuesta]:** paginadas con `{ contenido, pagina, tamano, totalElementos, totalPaginas }`, `pagina` desde 0, más recientes primero.
+12. **Saldo:** una compra reserva `totalDescontado` (disponible → reservado); al ejecutarse sale de reservado; si se cancela, rechaza, expira o falla, vuelve a disponible. Una venta suma al disponible al ejecutarse. `GET /cuenta/saldo` y `/portafolio` lo reflejan.
+13. **Límite diario:** suma de órdenes del día (sin canceladas, rechazadas, expiradas ni fallidas) más la nueva; si lo supera, 422 `LIMITE_DIARIO_EXCEDIDO`.
+
+## Preguntas que quedan abiertas para backend
+
+1. ¿En qué estado queda una orden totalmente ejecutada, si no existe `EJECUTADA`? El mock la deja en `EN_EJECUCION` con `cantidadEjecutada === cantidad` (constante `ESTADO_AL_EJECUTAR`).
+2. ¿Cuál es el flujo entre `PENDIENTE`, `ENVIADA`, `EN_REVISION`, `EN_EJECUCION`, `DETENIDA`, `EXPIRADA` y `FALLIDA`, y qué dispara cada transición?
+3. ¿Qué campos tiene la orden en `GET /ordenes` y `GET /ordenes/{id}`? ¿Incluye las ejecuciones?
+4. ¿Qué código de error devuelve el 422 de la doble autorización y cuánto dura el código?
+5. ¿El código de autorización lo entrega otra vía (SMS/correo)? ¿Se pide para toda orden sobre el umbral?
+
+## Estados de pantalla cubiertos
+
+| Estado  | Cómo verlo (`npm start`)                                                                                                                        |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Éxito   | `laura@correo.com`: 8 órdenes de ejemplo (PENDIENTE, EN_EJECUCION ya ejecutada, CANCELADA, RECHAZADA, EXPIRADA, EN_REVISION, FALLIDA, DETENIDA) |
+| Vacío   | `nuevo@correo.com`: sin órdenes, saldo y posiciones en cero                                                                                     |
+| Carga   | `window.__mock.ordenes.latencia(2000)`                                                                                                          |
+| Error   | `window.__mock.ordenes.fallar("PROVEEDOR_NO_DISPONIBLE")` (cualquier código del catálogo; opciones `veces`, `ruta`)                             |
+| Mercado | `window.__mock.ordenes.mercado(false \| true \| null)` o `window.__mock.mercadoAbierto("NYSE", false)`                                          |
+| Parcial | `window.__mock.ordenes.ejecutarParcial()` tras crear una orden de 2+ acciones                                                                   |
+| Estados | `window.__mock.ordenes.listar()` y `.estado(id, "ENVIADA")` para ver cualquiera de los 10                                                       |
+
+`.ejecutarPendientes()` ejecuta lo que falte; `.limpiar()` quita errores y latencia forzados.
+
+## Pendiente en las siguientes partes
+
+Notificaciones (canales SMS, EMAIL y WHATSAPP; eventos `APERTURA_CIERRE_MERCADO`, `RESUMEN_DIARIO_OPERACIONES` y `ORDEN_EJECUTADA`; forma `{ id, tipo, titulo, mensaje, leida, creadaEn, referenciaId }` y `PATCH /notificaciones/{id}/leida`, ambos [Propuesta] salvo canales y eventos) y comisionista (clientes, portafolio y órdenes del cliente, propuestas con `PENDIENTE_APROBACION → APROBADA → FIRMADA`, `RECHAZADA` o `VENCIDA`).
+
+## Limitaciones conocidas
+
+El mock no reserva acciones en ventas pendientes (se podrían vender dos veces las mismas), el reloj de mercado usa el horario real o el forzado, y las órdenes STOP_LOSS/TAKE_PROFIT se ejecutan con el precio de mercado al pedirlo.

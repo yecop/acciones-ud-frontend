@@ -9,6 +9,7 @@ import {
   MAX_FALLOS_LOGIN,
 } from "./db.js";
 import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
+import { aplicarTenencias, crearHandlersOrdenes, vistaSaldo } from "./ordenes.js";
 
 /**
  * Endpoints simulados del contrato `/api/v1` (los de esta semana: autenticación, perfil,
@@ -192,7 +193,7 @@ const POSICIONES = [
 ];
 
 function posicionesValoradas(usuario) {
-  return (usuario?.cuentaVacia ? [] : POSICIONES).map((p) => {
+  return aplicarTenencias(db.trading, usuario, usuario?.cuentaVacia ? [] : POSICIONES).map((p) => {
     const precioActual = ACCIONES.find((a) => a.ticker === p.activo).precio;
     const costo = p.cantidad * p.precioCompra;
     const valor = p.cantidad * precioActual;
@@ -610,13 +611,7 @@ export const handlers = [
   // ---- Cuenta y portafolio -------------------------------------------------
   rest.get(
     `${RAIZ}/cuenta/saldo`,
-    protegido(INV, ({ usuario }) =>
-      HttpResponse.json(
-        usuario.cuentaVacia
-          ? { disponible: "0.00", reservado: "0.00", total: "0.00" }
-          : { disponible: "4250.00", reservado: "351.20", total: "4601.20" }
-      )
-    )
+    protegido(INV, ({ usuario }) => HttpResponse.json(vistaSaldo(db.trading, usuario)))
   ),
 
   rest.get(
@@ -630,4 +625,14 @@ export const handlers = [
       HttpResponse.json(posicionesValoradas(usuario).map(({ _costo, _valor, ...p }) => p))
     )
   ),
+
+  // ---- Órdenes (SCRUM-35) --------------------------------------------------
+  ...crearHandlersOrdenes({
+    db,
+    error,
+    protegido,
+    leerCuerpo,
+    pagina,
+    posicionesBase: POSICIONES,
+  }),
 ];

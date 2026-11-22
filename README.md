@@ -213,6 +213,22 @@ backend. Las pruebas usan los mismos handlers (`src/test/setup.js`).
 Para agregar un endpoint, añade su handler en `src/mocks/handlers.js` con `protegido(roles, ...)`.
 El archivo `public/mockServiceWorker.js` lo genera MSW (`npx msw init public/`); no se edita.
 
+### Mock de órdenes (SCRUM-35)
+
+`src/mocks/ordenes.js` simula `POST /ordenes/simulacion`, `POST /ordenes` (con `Idempotency-Key`),
+`GET /ordenes`, `GET /ordenes/{id}`, `GET /ordenes/{id}/historial` y `POST /ordenes/{id}/cancelar`.
+El estado es coherente con saldo y portafolio: comprar reserva fondos, ejecutar mueve la posición
+y cancelar libera el saldo. Cliente: `src/api/ordenesApi.js`. Las formas que el contrato no
+define (listas, historial, estados) están en [docs/trading-mock.md](docs/trading-mock.md).
+
+Desde la consola del navegador (`npm start`): `window.__mock.ordenes.mercado(false)` (cierra el
+mercado), `.ejecutarPendientes()`, `.ejecutarParcial()`, `.estado(id, "ENVIADA")`,
+`.fallar("PROVEEDOR_NO_DISPONIBLE")`, `.latencia(2000)` y `.limpiar()`. Cuenta con órdenes de ejemplo: `laura@`; estado vacío: `nuevo@`.
+
+**Cambiar entre mock y API real:** no hay código que tocar, solo el comando. `npm start` usa el
+mock (`.env.mock`, `VITE_USE_MOCK=true`); `npm run dev` usa el backend definido en
+`VITE_API_BASE_URL` / `VITE_PROXY_TARGET`.
+
 ## Calidad y CI
 
 `.github/workflows/ci.yml` ejecuta en cada push y en cada PR a `main`: **lint → build → pruebas**.

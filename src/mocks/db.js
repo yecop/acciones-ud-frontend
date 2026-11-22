@@ -1,4 +1,5 @@
 import { nuevoUuid } from "../api/httpClient.js";
+import { crearEstadoTrading } from "./ordenes.js";
 
 /**
  * Base de datos en memoria del servidor mock. Se reinicia al recargar la página
@@ -89,6 +90,8 @@ export const db = {
   intentosLogin: new Map(),
   /** Contadores para inspeccionar el comportamiento en pruebas. */
   contadores: { refresh: 0 },
+  /** Órdenes, saldos y tenencias simulados (SCRUM-35). */
+  trading: crearEstadoTrading(),
 
   /** Fallos y datos viejos que se activan desde la consola (`window.__mock`). */
   simulacion: { proveedorCaido: false, edades: {}, mercadoAbierto: {} },
@@ -101,6 +104,7 @@ export const db = {
     this.retosMfa.clear();
     this.intentosLogin.clear();
     this.contadores.refresh = 0;
+    this.trading = crearEstadoTrading();
     this.persistir();
   },
 
