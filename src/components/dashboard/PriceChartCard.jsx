@@ -104,6 +104,12 @@ export default function PriceChartCard({ asset, series = DEFAULT_SERIES }) {
         </div>
       </div>
 
+      {asset.ejemplo && (
+        <p className={styles.ejemplo}>
+          Trazo y estadísticas de ejemplo: la API aún no entrega historial de precios.
+        </p>
+      )}
+
       <div className={styles.stats}>
         {asset.stats.map((stat) => (
           <div key={stat.label} className={styles.stat}>
