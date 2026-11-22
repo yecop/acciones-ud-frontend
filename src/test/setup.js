@@ -3,6 +3,9 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 import { server } from "../mocks/server.js";
 import { db } from "../mocks/db.js";
 import { session } from "../auth/session.js";
+import { configure } from "@testing-library/react";
+
+configure({ asyncUtilTimeout: 5000 });
 
 // Servidor mock de la API para todas las pruebas. Las pruebas que no hacen peticiones
 // reales (p. ej. las que usan vi.mock) no se ven afectadas.

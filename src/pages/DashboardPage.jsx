@@ -18,6 +18,7 @@ import { dashboardData } from "../data/dashboardData.js";
  *
  * @param {object} props
  * @param {object} [props.data]        Datos del panel.
+ * @param {{cargando:boolean,error:Error|null,onReintentar:function}} [props.carga] Estado de carga.
  * @param {function} [props.onNewOrder]
  * @param {function} [props.onTrade]   Recibe el símbolo.
  * @param {function} [props.onNavigate]
@@ -26,6 +27,7 @@ import { dashboardData } from "../data/dashboardData.js";
  */
 export default function DashboardPage({
   data = dashboardData,
+  carga,
   onNewOrder,
   onTrade,
   onNavigate,
@@ -46,6 +48,15 @@ export default function DashboardPage({
             <PlusIcon /> Nueva orden
           </button>
         </div>
+
+        {carga?.error && (
+          <div className={styles.error} role="alert">
+            <p>No pudimos cargar tu resumen. {carga.error.message}</p>
+            <button type="button" onClick={carga.onReintentar}>
+              Reintentar
+            </button>
+          </div>
+        )}
 
         <KpiCards items={data.kpis} />
 
@@ -68,8 +79,8 @@ export default function DashboardPage({
         <PanelMercados onTrade={onTrade} />
 
         <p className={styles.footerNote}>
-          Mercados y acciones vienen del API. Los indicadores, el gráfico y la actividad son datos
-          de ejemplo.
+          Fondos, portafolio, alertas, la acción destacada y los mercados vienen del API. El trazo
+          del gráfico, sus estadísticas y la actividad son datos de ejemplo.
         </p>
       </main>
     </div>
