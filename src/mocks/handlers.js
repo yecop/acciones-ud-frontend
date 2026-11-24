@@ -9,7 +9,13 @@ import {
   MAX_FALLOS_LOGIN,
 } from "./db.js";
 import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
-import { aplicarTenencias, crearHandlersOrdenes, vistaSaldo } from "./ordenes.js";
+import { crearHandlersNotificaciones } from "./notificaciones.js";
+import {
+  aplicarTenencias,
+  crearConSimulacion,
+  crearHandlersOrdenes,
+  vistaSaldo,
+} from "./ordenes.js";
 
 /**
  * Endpoints simulados del contrato `/api/v1` (los de esta semana: autenticación, perfil,
@@ -634,5 +640,14 @@ export const handlers = [
     leerCuerpo,
     pagina,
     posicionesBase: POSICIONES,
+  }),
+
+  // ---- Notificaciones (SCRUM-35) -------------------------------------------
+  ...crearHandlersNotificaciones({
+    db,
+    error,
+    protegido,
+    pagina,
+    conSimulacion: crearConSimulacion({ db, error }),
   }),
 ];

@@ -1,6 +1,7 @@
 import { setupWorker } from "msw/browser";
 import { CODIGO_MFA_VALIDO, CONTRASENA_DEMO, db } from "./db.js";
 import { handlers } from "./handlers.js";
+import { utilidadesNotificaciones } from "./notificaciones.js";
 import { utilidadesOrdenes } from "./ordenes.js";
 import { conectarPersistencia } from "./persistence.js";
 
@@ -30,6 +31,8 @@ export async function iniciarMock() {
     reiniciar: () => db.reiniciar(),
     /** Órdenes: mercado(true|false|null), ejecutarPendientes(), fallar(codigo), latencia(ms), limpiar(). */
     ordenes: utilidadesOrdenes(db),
+    /** Notificaciones: crear(datos), mercado(codigo, abierto), noLeidas(). */
+    notificaciones: utilidadesNotificaciones(db),
     /** Las cotizaciones responden 502 PROVEEDOR_NO_DISPONIBLE (true) o vuelven a la normalidad. */
     proveedorCaido: (caido = true) => {
       db.simulacion.proveedorCaido = caido;
