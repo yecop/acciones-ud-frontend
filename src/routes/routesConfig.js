@@ -26,7 +26,6 @@ export const RUTAS_PROTEGIDAS = [
     path: "/operar",
     titulo: "Operar",
     roles: [ROLES.INV, ROLES.COM],
-    pendiente: "Órdenes",
   },
   {
     id: "portafolio",

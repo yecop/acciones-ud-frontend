@@ -33,6 +33,8 @@ export const MENSAJES_ERROR = {
   FONDOS_INSUFICIENTES: "Tu saldo no cubre el total de la orden más la comisión.",
   ACCIONES_INSUFICIENTES: "No tienes suficientes acciones para vender esa cantidad.",
   LIMITE_DIARIO_EXCEDIDO: "Alcanzaste el máximo de operaciones diarias de tu perfil.",
+  // ⚠ Código provisional: backend aún no define el del 422 de la doble autorización.
+  CODIGO_AUTORIZACION_INVALIDO: "El código de autorización es incorrecto o venció.",
   // 429
   DEMASIADAS_SOLICITUDES: "Hiciste demasiadas solicitudes. Espera un momento e inténtalo otra vez.",
   // 5xx

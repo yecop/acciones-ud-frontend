@@ -10,12 +10,14 @@ import { ORDER_TYPES } from "./orderUtils.js";
  * @param {string} props.value       Id del tipo seleccionado.
  * @param {function} props.onChange  Recibe el id del tipo.
  * @param {string} [props.label]
+ * @param {boolean} [props.disabled]
  */
 export default function OrderTypeSelector({
   types = ORDER_TYPES,
   value,
   onChange,
   label = "Tipo de orden",
+  disabled = false,
 }) {
   return (
     <div className={styles.field}>
@@ -29,6 +31,7 @@ export default function OrderTypeSelector({
               type="button"
               role="tab"
               aria-selected={active}
+              disabled={disabled}
               className={`${styles.tab} ${active ? styles.tabActive : ""}`}
               onClick={() => onChange(type.id)}
             >

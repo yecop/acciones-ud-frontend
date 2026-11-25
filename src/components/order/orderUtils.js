@@ -27,14 +27,20 @@ export function orderTypeRequiresPrice(typeId) {
  * @param {number} params.quantity  Cantidad (entero >= 0).
  * @param {number} params.price      Precio unitario aplicado.
  * @param {number} [params.commissionRate=COMMISSION_RATE]
+ * @param {"buy"|"sell"} [params.side="buy"] En una venta el total es neto: subtotal − comisión.
  * @returns {{ subtotal:number, commission:number, total:number }}
  */
-export function calculateOrder({ quantity, price, commissionRate = COMMISSION_RATE }) {
+export function calculateOrder({
+  quantity,
+  price,
+  commissionRate = COMMISSION_RATE,
+  side = "buy",
+}) {
   const safeQty = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 0;
   const safePrice = Number.isFinite(price) && price > 0 ? price : 0;
   const subtotal = safeQty * safePrice;
   const commission = subtotal * commissionRate;
-  const total = subtotal + commission;
+  const total = side === "sell" ? subtotal - commission : subtotal + commission;
   return { subtotal, commission, total };
 }
 

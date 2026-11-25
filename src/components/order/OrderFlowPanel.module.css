@@ -1,0 +1,106 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.aviso {
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+}
+
+.fallo {
+  border-color: var(--color-negative);
+}
+
+.exito {
+  border-color: var(--color-positive);
+}
+
+.titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+}
+
+.texto {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.id {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.input {
+  font: inherit;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  letter-spacing: 0.15em;
+}
+
+.error {
+  margin: 0;
+  color: var(--color-negative);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.primario,
+.secundario {
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.primario {
+  border: none;
+  background: var(--color-brand-hero);
+  color: var(--color-surface);
+}
+
+.secundario {
+  border: 1.5px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text);
+}
+
+.primario:focus-visible,
+.secundario:focus-visible,
+.input:focus-visible {
+  outline: 3px solid var(--color-focus, currentColor);
+  outline-offset: 2px;
+}

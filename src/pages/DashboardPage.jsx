@@ -5,7 +5,7 @@ import KpiCards from "../components/dashboard/KpiCards.jsx";
 import PriceChartCard from "../components/dashboard/PriceChartCard.jsx";
 import PanelMercados from "../components/mercados/PanelMercados.jsx";
 import ActivityCard from "../components/dashboard/ActivityCard.jsx";
-import OrderForm from "../components/order/OrderForm.jsx";
+import NuevaOrden from "../components/order/NuevaOrden.jsx";
 import { PlusIcon } from "../components/ui/Icons.jsx";
 
 import { dashboardData } from "../data/dashboardData.js";
@@ -22,7 +22,7 @@ import { dashboardData } from "../data/dashboardData.js";
  * @param {function} [props.onNewOrder]
  * @param {function} [props.onTrade]   Recibe el símbolo.
  * @param {function} [props.onNavigate]
- * @param {function} [props.onSubmitOrder] Recibe el payload de la orden creada.
+ * @param {function} [props.onOrdenCreada] Se llama con la orden creada (para refrescar el panel).
  * @param {function} [props.onLogout]
  */
 export default function DashboardPage({
@@ -31,7 +31,7 @@ export default function DashboardPage({
   onNewOrder,
   onTrade,
   onNavigate,
-  onSubmitOrder,
+  onOrdenCreada,
   onLogout,
 }) {
   return (
@@ -66,11 +66,11 @@ export default function DashboardPage({
           </div>
 
           <div className={styles.colRight}>
-            <OrderForm
+            <NuevaOrden
               asset={data.trading.asset}
               saldoDisponible={data.trading.saldoDisponible}
               isMarketOpen={data.trading.isMarketOpen}
-              onSubmit={onSubmitOrder}
+              onCreada={onOrdenCreada}
             />
             <ActivityCard items={data.activity} />
           </div>

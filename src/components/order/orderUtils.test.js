@@ -92,3 +92,12 @@ describe("formatCurrency", () => {
     expect(formatted).toContain("0");
   });
 });
+
+describe("calculateOrder · venta", () => {
+  it("en una venta el total es neto: subtotal menos comisión", () => {
+    const r = calculateOrder({ quantity: 2, price: 100, side: "sell" });
+    expect(r.subtotal).toBe(200);
+    expect(r.commission).toBeCloseTo(4);
+    expect(r.total).toBeCloseTo(196);
+  });
+});
