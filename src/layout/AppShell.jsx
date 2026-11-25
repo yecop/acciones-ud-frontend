@@ -28,7 +28,7 @@ export default function AppShell() {
   const items = rutasDelRol(rol).map((r) => ({
     id: r.id,
     label: r.titulo,
-    active: pathname === r.path,
+    active: pathname === r.path || pathname.startsWith(`${r.path}/`),
   }));
 
   const salir = async () => {

@@ -28,6 +28,12 @@ export const RUTAS_PROTEGIDAS = [
     roles: [ROLES.INV, ROLES.COM],
   },
   {
+    id: "historial",
+    path: "/historial",
+    titulo: "Historial",
+    roles: [ROLES.INV],
+  },
+  {
     id: "portafolio",
     path: "/portafolio",
     titulo: "Portafolio y órdenes",

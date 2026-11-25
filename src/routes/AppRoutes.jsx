@@ -9,7 +9,9 @@ import MfaPage from "../pages/MfaPage.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import PortafolioView from "../pages/PortafolioView.jsx";
 import AccionesPage from "../pages/AccionesPage.jsx";
+import OrdenDetallePage from "../pages/OrdenDetallePage.jsx";
 import OrdenesPage from "../pages/OrdenesPage.jsx";
+import HistorialOrdenesPage from "../pages/HistorialOrdenesPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
 import { dashboardData } from "../data/dashboardData.js";
@@ -78,6 +80,7 @@ const PANTALLAS = {
   portafolio: <PortafolioView />,
   acciones: <AccionesPage />,
   operar: <OrdenesPage />,
+  historial: <HistorialOrdenesPage />,
 };
 
 function PaginaPendiente({ ruta }) {
@@ -128,6 +131,9 @@ export default function AppRoutes() {
               />
             </Route>
           ))}
+          <Route element={<ProtectedRoute roles={[ROLES.INV]} />}>
+            <Route path="/historial/:id" element={<OrdenDetallePage />} />
+          </Route>
         </Route>
       </Route>
 

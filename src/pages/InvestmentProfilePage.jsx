@@ -27,11 +27,7 @@ import { investmentProfileData } from "../data/investmentProfileData.js";
  * @param {function} [props.onSubmit]      Callback con el perfil al enviar.
  * @param {function} [props.onBack]        Callback al volver al paso anterior.
  */
-export default function InvestmentProfilePage({
-  data = investmentProfileData,
-  onSubmit,
-  onBack,
-}) {
+export default function InvestmentProfilePage({ data = investmentProfileData, onSubmit, onBack }) {
   const { defaults } = data;
 
   // Estado de los elementos interactivos del mockup.
@@ -94,45 +90,27 @@ export default function InvestmentProfilePage({
               sectors={data.sectors}
               selectedMarkets={selectedMarkets}
               selectedSectors={selectedSectors}
-              onToggleMarket={(id) =>
-                setSelectedMarkets((prev) => toggleInList(prev, id))
-              }
-              onToggleSector={(id) =>
-                setSelectedSectors((prev) => toggleInList(prev, id))
-              }
+              onToggleMarket={(id) => setSelectedMarkets((prev) => toggleInList(prev, id))}
+              onToggleSector={(id) => setSelectedSectors((prev) => toggleInList(prev, id))}
             />
 
-            <BrokerSelection
-              brokers={data.brokers}
-              value={broker}
-              onChange={setBroker}
-            />
+            <BrokerSelection brokers={data.brokers} value={broker} onChange={setBroker} />
 
             <Notifications
               channels={data.notificationChannels}
               selected={notifications}
-              onToggle={(id) =>
-                setNotifications((prev) => toggleInList(prev, id))
-              }
+              onToggle={(id) => setNotifications((prev) => toggleInList(prev, id))}
             />
           </Card>
 
           {/* Columna lateral: plan y custodia */}
           <aside className={styles.rightColumn}>
             <Card>
-              <PlanSelection
-                plans={data.plans}
-                value={plan}
-                onChange={setPlan}
-              />
+              <PlanSelection plans={data.plans} value={plan} onChange={setPlan} />
             </Card>
 
             <Card>
-              <CustodyPanel
-                onSubmit={handleSubmit}
-                onBack={onBack}
-                submitting={submitting}
-              />
+              <CustodyPanel onSubmit={handleSubmit} onBack={onBack} submitting={submitting} />
             </Card>
           </aside>
         </div>

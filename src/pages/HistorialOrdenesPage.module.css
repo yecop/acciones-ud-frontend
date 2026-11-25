@@ -1,0 +1,27 @@
+.main {
+  min-width: 0;
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(var(--space-5), 2vw, 32px);
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--color-text);
+}
+
+.subheading {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+}
+
+.enlace {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
