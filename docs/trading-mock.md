@@ -52,6 +52,14 @@ Fuente: respuestas del backend (22-nov). Cada punto va marcado como **[Definido]
 
 `.ejecutarPendientes()` ejecuta lo que falte; `.limpiar()` quita errores y latencia forzados.
 
+## Historial y detalle de órdenes (SCRUM-62)
+
+- `/historial` (solo INV): `GET /ordenes` con filtros `estado`, `lado`, `ticker`, `desde`, `hasta` (día local completo en ISO) y paginación de 10 (`pagina` desde 0 en la API, desde 1 en la URL). Filtros y página viven en la URL (`?estado=CANCELADA&pagina=2`), así que se pueden compartir y el botón «atrás» funciona.
+- `/historial/:id`: `GET /ordenes/{id}` + `GET /ordenes/{id}/historial` en paralelo. Si falla solo el historial, el resumen se muestra igual con su propio «Reintentar». Una orden ajena responde 404 y se muestra «no existe o no te pertenece».
+- Desde el detalle se puede cancelar (misma regla: solo PENDIENTE y EN_REVISION).
+- Actor del historial: `USUARIO` se muestra «Tú» si coincide con la sesión, `COMISIONISTA`, `SISTEMA`. [Propuesta] hasta que backend confirme el formato.
+- El filtro «En ejecución o ejecutada» agrupa EN_EJECUCION porque aún no hay un estado EJECUTADA (ver preguntas abiertas).
+
 ## Notificaciones (parte 2, `src/mocks/notificaciones.js`, cliente `src/api/notificacionesApi.js`)
 
 | Endpoint                           | Roles    | Origen de la forma                                                            |

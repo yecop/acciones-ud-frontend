@@ -147,6 +147,16 @@
   min-width: 96px;
 }
 
+.acciones > * + * {
+  margin-left: var(--space-2);
+}
+
+.encabezadoAcciones {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .confirmar {
   display: inline-flex;
   flex-wrap: wrap;

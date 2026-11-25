@@ -48,3 +48,10 @@ const TIPOS = {
 };
 export const etiquetaTipo = (tipo) => TIPOS[tipo] ?? tipo;
 export const etiquetaLado = (lado) => (lado === "COMPRA" ? "Compra" : "Venta");
+
+/** Opciones del filtro por estado (valor de la API y texto en español). */
+export const OPCIONES_ESTADO = Object.entries(ESTADOS).map(([valor, { etiqueta }]) => ({
+  valor,
+  // ⚠ Una orden totalmente ejecutada sigue en EN_EJECUCION (ver `etiquetaEstado`).
+  etiqueta: valor === "EN_EJECUCION" ? "En ejecución o ejecutada" : etiqueta,
+}));

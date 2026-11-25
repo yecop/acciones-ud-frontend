@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import styles from "./OrdenesPage.module.css";
 import NuevaOrden from "../components/order/NuevaOrden.jsx";
 import OrdenesLista from "../components/order/OrdenesLista.jsx";
@@ -123,6 +123,7 @@ export default function OrdenesPage() {
           error={ordenes.error}
           onReintentar={ordenes.recargar}
           onCambio={alCambiar}
+          encabezadoExtra={<Link to="/historial">Ver historial completo</Link>}
         />
       </div>
     </div>
