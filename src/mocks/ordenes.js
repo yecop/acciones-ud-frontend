@@ -479,7 +479,8 @@ export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina,
   const conSimulacion = (resolver) => async (contexto) => {
     const t = trading();
     if (t.latenciaExtraMs) await new Promise((r) => setTimeout(r, t.latenciaExtraMs));
-    const indice = t.fallos.findIndex((f) => !f.ruta || contexto.request.url.includes(f.ruta));
+    const camino = new URL(contexto.request.url).pathname;
+    const indice = t.fallos.findIndex((f) => !f.ruta || camino.endsWith(f.ruta));
     if (indice >= 0) {
       const fallo = t.fallos[indice];
       fallo.veces -= 1;
@@ -836,9 +837,16 @@ export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina,
 /** Utilidades de consola `window.__mock.ordenes` (y para pruebas). */
 export function utilidadesOrdenes(db) {
   return {
-    /** Fuerza el mercado: true abierto, false cerrado, null horario real. */
+    /**
+     * Fuerza TODOS los mercados: true abierto, false cerrado, null horario real. Afecta a la vez la
+     * simulación, la creación y el estado de mercado que ve el panel (`mercadoAbierto(codigo)`).
+     */
     mercado: (abierto) => {
       db.trading.mercadoForzado = abierto;
+      for (const m of MERCADOS) {
+        if (abierto === null) delete db.simulacion.mercadoAbierto[m.codigo];
+        else db.simulacion.mercadoAbierto[m.codigo] = abierto;
+      }
     },
     /** Ejecuta ya lo que falte de las órdenes pendientes y en ejecución. Devuelve cuántas. */
     ejecutarPendientes: () => ejecutarPendientes(db.trading),
@@ -848,7 +856,10 @@ export function utilidadesOrdenes(db) {
     estado: (id, estado, motivo) => forzarEstado(db.trading, id, estado, motivo),
     /** Ids de las órdenes con su estado, para usar con `estado()`. */
     listar: () => db.trading.ordenes.map((o) => ({ id: o.id, ticker: o.ticker, estado: o.estado })),
-    /** La siguiente(s) `veces` llamada(s) a órdenes fallan con ese código del catálogo. */
+    /**
+     * La siguiente(s) `veces` llamada(s) fallan con ese código del catálogo. `ruta` (opcional) es
+     * el final de la ruta, p. ej. "/ordenes" (no afecta a "/ordenes/simulacion") o "/notificaciones".
+     */
     fallar: (codigo, { veces = 1, ruta, mensaje } = {}) => {
       db.trading.fallos.push({
         codigo,

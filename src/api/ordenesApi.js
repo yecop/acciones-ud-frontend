@@ -31,3 +31,10 @@ export const obtenerHistorialOrden = (id, opciones) =>
 
 /** POST /ordenes/{id}/cancelar */
 export const cancelarOrden = (id, opciones) => http.post(`/ordenes/${id}/cancelar`, {}, opciones);
+
+/**
+ * POST /ordenes/autorizar — confirma una orden que pidió doble autorización (la creación
+ * respondió 202 con `autorizacionId`). [Propuesta de backend]
+ */
+export const autorizarOrden = ({ autorizacionId, codigoAutorizacion }, opciones) =>
+  http.post("/ordenes/autorizar", { autorizacionId, codigoAutorizacion }, opciones);

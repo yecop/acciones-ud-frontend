@@ -9,6 +9,7 @@ import MfaPage from "../pages/MfaPage.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import PortafolioView from "../pages/PortafolioView.jsx";
 import AccionesPage from "../pages/AccionesPage.jsx";
+import OrdenesPage from "../pages/OrdenesPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
 import { dashboardData } from "../data/dashboardData.js";
@@ -58,9 +59,11 @@ function RutaPanel() {
       data={datos}
       carga={{ cargando: resumen.cargando, error: resumen.error, onReintentar: resumen.refrescar }}
       onNewOrder={() => navigate("/operar")}
-      onTrade={() => navigate("/operar")}
+      onTrade={(ticker) =>
+        navigate(ticker ? `/operar?ticker=${encodeURIComponent(ticker)}` : "/operar")
+      }
       onNavigate={(id) => navigate(rutaDeNavegacion(id))}
-      onSubmitOrder={(orden) => console.info("Orden (pendiente de integración):", orden)}
+      onOrdenCreada={resumen.refrescar}
       onLogout={async () => {
         await cerrarSesion();
         navigate(RUTAS.ingreso, { replace: true });
@@ -74,6 +77,7 @@ const PANTALLAS = {
   perfil: <ProfilePage />,
   portafolio: <PortafolioView />,
   acciones: <AccionesPage />,
+  operar: <OrdenesPage />,
 };
 
 function PaginaPendiente({ ruta }) {

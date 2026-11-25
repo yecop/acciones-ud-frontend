@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./OrderForm.module.css";
 
 import OrderTypeSelector from "./OrderTypeSelector.jsx";
 import OrderSummary from "./OrderSummary.jsx";
+import OrderFlowPanel from "./OrderFlowPanel.jsx";
 import { AlertIcon } from "../ui/Icons.jsx";
 import {
   calculateOrder,
@@ -18,7 +19,9 @@ import {
  * - Selector de tipo: Market / Limit / Stop Loss / Take Profit.
  * - Market Order oculta el input de precio y usa el precio actual.
  * - Calcula en tiempo real el total (precio x cantidad) y la comisión (2%).
- * - Valida fondos contra `saldoDisponible`; si no alcanza, deshabilita el botón.
+ * - Valida fondos contra `saldoDisponible` en las compras; en las ventas valida que haya acciones
+ *   suficientes (según la simulación del backend). Si no alcanza, deshabilita el botón.
+ * - Si recibe `simulacion` (POST /ordenes/simulacion), muestra comisión y totales del backend.
  * - Si `isMarketOpen` es false, muestra banner y cambia el botón a "Encolar Orden".
  *
  * Pensado para importarse directamente en el DashboardPage.
@@ -29,6 +32,10 @@ import {
  * @param {boolean} [props.isMarketOpen]  Si el mercado está abierto.
  * @param {string} [props.defaultType]    Tipo de orden inicial.
  * @param {function} [props.onSubmit]     Recibe el payload de la orden.
+ * @param {function} [props.onDraftChange] Recibe el borrador cada vez que cambia (para simular).
+ * @param {object} [props.simulacion]     Respuesta de la simulación del backend para el borrador.
+ * @param {object} [props.envio]          Estado del envío (`useCrearOrden().estado`).
+ * @param {object} [props.acciones]       Acciones del envío (`useCrearOrden().acciones`).
  */
 export default function OrderForm({
   asset = { symbol: "AAPL", name: "Apple Inc.", currentPrice: 176.5 },
@@ -36,6 +43,10 @@ export default function OrderForm({
   isMarketOpen = true,
   defaultType = "market",
   onSubmit,
+  onDraftChange,
+  simulacion = null,
+  envio = { fase: "idle" },
+  acciones = {},
 }) {
   const [orderType, setOrderType] = useState(defaultType);
   const [side, setSide] = useState("buy");
@@ -45,25 +56,44 @@ export default function OrderForm({
   const requiresPrice = orderTypeRequiresPrice(orderType);
 
   // Precio efectivo: manual si el tipo lo requiere, de lo contrario el actual.
-  const effectivePrice = requiresPrice
-    ? parseFloat(price) || 0
-    : asset.currentPrice;
+  const effectivePrice = requiresPrice ? parseFloat(price) || 0 : asset.currentPrice;
 
-  const { subtotal, commission, total } = useMemo(
-    () =>
-      calculateOrder({
-        quantity: parseInt(quantity, 10),
-        price: effectivePrice,
-      }),
-    [quantity, effectivePrice]
+  const isBuy = side === "buy";
+  const cantidadEntera = parseInt(quantity, 10);
+
+  const local = useMemo(
+    () => calculateOrder({ quantity: cantidadEntera, price: effectivePrice, side }),
+    [cantidadEntera, effectivePrice, side]
   );
 
-  const insufficientFunds = total > saldoDisponible;
-  const hasValidQuantity = parseInt(quantity, 10) > 0;
-  const hasValidPrice = !requiresPrice || effectivePrice > 0;
-  const canSubmit = hasValidQuantity && hasValidPrice && !insufficientFunds;
+  // La simulación del backend es la fuente de verdad; si no llegó, se usa el cálculo local.
+  const subtotal = simulacion ? Number(simulacion.totalTransaccion) : local.subtotal;
+  const commission = simulacion ? Number(simulacion.comision?.valor) : local.commission;
+  const total = simulacion ? Number(simulacion.totalADescontar) : local.total;
+  const commissionPct = simulacion ? Number(simulacion.comision?.porcentaje) : 2;
 
-  const submitLabel = isMarketOpen ? "Ejecutar Orden" : "Encolar Orden";
+  const hasValidQuantity = cantidadEntera > 0;
+  const hasValidPrice = !requiresPrice || effectivePrice > 0;
+  const insufficientFunds = isBuy && total > saldoDisponible;
+  // En ventas solo el backend sabe cuántas acciones hay: `fondosSuficientes` es false si faltan.
+  const insufficientShares = !isBuy && simulacion?.fondosSuficientes === false;
+  const canSubmit = hasValidQuantity && hasValidPrice && !insufficientFunds && !insufficientShares;
+
+  const enviando = envio.fase === "enviando";
+  const bloqueado = envio.fase !== "idle" && envio.fase !== "error";
+
+  // Avisa el borrador para que el contenedor lo simule en el backend.
+  useEffect(() => {
+    onDraftChange?.({
+      symbol: asset.symbol,
+      side,
+      type: orderType,
+      quantity: cantidadEntera,
+      price: effectivePrice,
+    });
+  }, [onDraftChange, asset.symbol, side, orderType, cantidadEntera, effectivePrice]);
+
+  const submitLabel = enviando ? "Enviando…" : isMarketOpen ? "Ejecutar Orden" : "Encolar Orden";
 
   const handleQuantityChange = (e) => {
     // Solo enteros no negativos.
@@ -94,6 +124,12 @@ export default function OrderForm({
     else console.info("Orden lista para enviar al API:", payload);
   };
 
+  const handleNueva = () => {
+    setQuantity("");
+    setPrice("");
+    acciones.reiniciar?.();
+  };
+
   return (
     <section className={styles.card} aria-label="Crear orden">
       <div className={styles.header}>
@@ -109,8 +145,8 @@ export default function OrderForm({
             <AlertIcon />
           </span>
           <p className={styles.bannerText}>
-            Mercado cerrado. Tu orden se encolará para la próxima apertura y te
-            pediremos confirmarla.
+            Mercado cerrado. Tu orden se encolará para la próxima apertura y te pediremos
+            confirmarla.
           </p>
         </div>
       )}
@@ -121,6 +157,7 @@ export default function OrderForm({
           type="button"
           aria-pressed={side === "buy"}
           className={`${styles.sideBtn} ${side === "buy" ? styles.sideBuyActive : ""}`}
+          disabled={bloqueado}
           onClick={() => setSide("buy")}
         >
           Comprar
@@ -129,13 +166,19 @@ export default function OrderForm({
           type="button"
           aria-pressed={side === "sell"}
           className={`${styles.sideBtn} ${side === "sell" ? styles.sideSellActive : ""}`}
+          disabled={bloqueado}
           onClick={() => setSide("sell")}
         >
           Vender
         </button>
       </div>
 
-      <OrderTypeSelector types={ORDER_TYPES} value={orderType} onChange={setOrderType} />
+      <OrderTypeSelector
+        types={ORDER_TYPES}
+        value={orderType}
+        onChange={setOrderType}
+        disabled={bloqueado}
+      />
 
       {/* Cantidad */}
       <div className={styles.field}>
@@ -150,6 +193,7 @@ export default function OrderForm({
             inputMode="numeric"
             placeholder="0"
             value={quantity}
+            disabled={bloqueado}
             onChange={handleQuantityChange}
           />
         </div>
@@ -171,6 +215,7 @@ export default function OrderForm({
               inputMode="decimal"
               placeholder="0.00"
               value={price}
+              disabled={bloqueado}
               onChange={handlePriceChange}
             />
           </div>
@@ -178,12 +223,8 @@ export default function OrderForm({
         </div>
       ) : (
         <div className={styles.marketPrice}>
-          <span className={styles.marketPriceLabel}>
-            Precio de mercado (actual)
-          </span>
-          <span className={styles.marketPriceValue}>
-            {formatCurrency(asset.currentPrice)}
-          </span>
+          <span className={styles.marketPriceLabel}>Precio de mercado (actual)</span>
+          <span className={styles.marketPriceValue}>{formatCurrency(asset.currentPrice)}</span>
         </div>
       )}
 
@@ -193,16 +234,23 @@ export default function OrderForm({
         total={total}
         availableBalance={saldoDisponible}
         insufficientFunds={hasValidQuantity && insufficientFunds}
+        insufficientShares={hasValidQuantity && insufficientShares}
+        side={side}
+        commissionPct={commissionPct}
       />
 
-      <button
-        type="button"
-        className={`${styles.submit} ${!isMarketOpen ? styles.submitQueue : ""}`}
-        disabled={!canSubmit}
-        onClick={handleSubmit}
-      >
-        {submitLabel}
-      </button>
+      {envio.fase === "idle" || envio.fase === "enviando" ? (
+        <button
+          type="button"
+          className={`${styles.submit} ${!isMarketOpen ? styles.submitQueue : ""}`}
+          disabled={!canSubmit || enviando}
+          onClick={handleSubmit}
+        >
+          {submitLabel}
+        </button>
+      ) : (
+        <OrderFlowPanel envio={envio} acciones={acciones} onNueva={handleNueva} />
+      )}
     </section>
   );
 }

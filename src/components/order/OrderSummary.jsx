@@ -11,6 +11,9 @@ import { formatCurrency } from "./orderUtils.js";
  * @param {number} props.total            Subtotal + comisión.
  * @param {number} props.availableBalance Saldo disponible del usuario.
  * @param {boolean} props.insufficientFunds Si el total supera el saldo.
+ * @param {"buy"|"sell"} [props.side]       En una venta el total es neto (subtotal − comisión).
+ * @param {boolean} [props.insufficientShares] Venta de más acciones de las que se tienen.
+ * @param {number} [props.commissionPct]    Porcentaje de comisión mostrado (por defecto 2).
  */
 export default function OrderSummary({
   subtotal,
@@ -18,7 +21,11 @@ export default function OrderSummary({
   total,
   availableBalance,
   insufficientFunds,
+  side = "buy",
+  insufficientShares = false,
+  commissionPct = 2,
 }) {
+  const esVenta = side === "sell";
   return (
     <div className={styles.summary}>
       <div className={styles.breakdown}>
@@ -27,11 +34,13 @@ export default function OrderSummary({
           <p className={styles.value}>{formatCurrency(subtotal)}</p>
         </div>
         <div className={styles.row}>
-          <p className={styles.label}>Comisión (2%)</p>
+          <p className={styles.label}>Comisión ({commissionPct}%)</p>
           <p className={styles.value}>{formatCurrency(commission)}</p>
         </div>
         <div className={`${styles.row} ${styles.totalRow}`}>
-          <p className={styles.totalLabel}>Total + comisión</p>
+          <p className={styles.totalLabel}>
+            {esVenta ? "Recibirás (total − comisión)" : "Total + comisión"}
+          </p>
           <p className={`${styles.totalValue} ${insufficientFunds ? styles.negative : ""}`}>
             {formatCurrency(total)}
           </p>
@@ -43,7 +52,18 @@ export default function OrderSummary({
         <span className={styles.balanceValue}>{formatCurrency(availableBalance)}</span>
       </div>
 
-      {insufficientFunds && (
+      {insufficientShares && (
+        <div className={styles.alert} role="alert">
+          <span className={styles.alertIcon}>
+            <AlertIcon />
+          </span>
+          <p className={styles.alertText}>
+            No tienes suficientes acciones para vender esa cantidad.
+          </p>
+        </div>
+      )}
+
+      {insufficientFunds && !esVenta && (
         <div className={styles.alert} role="alert">
           <span className={styles.alertIcon}>
             <AlertIcon />
