@@ -1,5 +1,6 @@
 import { HttpResponse, http as rest } from "msw";
 import { nuevoUuid } from "../api/httpClient.js";
+import { crearNotificacion, notificacionesIniciales } from "./notificaciones.js";
 import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
 
 /**
@@ -213,6 +214,8 @@ const SALDOS_INICIALES = {
 export function crearEstadoTrading() {
   return {
     ordenes: semillas(),
+    /** Notificaciones de todos los usuarios (SCRUM-35, parte 2). */
+    notificaciones: notificacionesIniciales(),
     /** `usuarioId:Idempotency-Key` → { huella, status, cuerpo } (única por cuenta, no expira). */
     idempotencia: new Map(),
     /** autorizacionId → { usuarioId, cuerpo, expira, resultado } (doble autorización). */
@@ -384,6 +387,15 @@ function ejecutarTramo(trading, orden, cantidad) {
   trading.tenencias.set(orden.usuarioId, cambios);
 
   orden.ejecuciones.push({ cantidad: qty, precio: monto(precio), fecha: new Date().toISOString() });
+  if (completa) {
+    const verbo = orden.lado === "COMPRA" ? "la compra" : "la venta";
+    crearNotificacion(trading.notificaciones, orden.usuarioId, {
+      tipo: "ORDEN_EJECUTADA",
+      titulo: "Orden ejecutada",
+      mensaje: `Se ejecutó ${verbo} de ${orden.cantidad} ${orden.ticker} a ${monto(precio)} USD.`,
+      referenciaId: orden.id,
+    });
+  }
   if (orden.estado !== ESTADO_AL_EJECUTAR) {
     registrar(orden, ESTADO_AL_EJECUTAR, SISTEMA, completa ? "Ejecutada" : "Ejecución parcial");
   } else {
@@ -467,17 +479,10 @@ function vistaOrden(orden) {
 
 // ----------------------------------------------------------------- handlers
 
-/**
- * Crea los handlers de órdenes. Recibe los helpers del módulo de handlers para evitar una
- * importación circular (handlers.js importa este archivo).
- */
-export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina, posicionesBase }) {
-  const trading = () => db.trading;
-  const CON_ORDENES = ["INVERSIONISTA"];
-
-  /** Aplica latencia extra y errores forzados antes del resolver real. */
-  const conSimulacion = (resolver) => async (contexto) => {
-    const t = trading();
+/** Aplica latencia extra y errores forzados antes del resolver real (órdenes y notificaciones). */
+export function crearConSimulacion({ db, error }) {
+  return (resolver) => async (contexto) => {
+    const t = db.trading;
     if (t.latenciaExtraMs) await new Promise((r) => setTimeout(r, t.latenciaExtraMs));
     const indice = t.fallos.findIndex((f) => !f.ruta || contexto.request.url.includes(f.ruta));
     if (indice >= 0) {
@@ -490,6 +495,17 @@ export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina,
     }
     return resolver(contexto);
   };
+}
+
+/**
+ * Crea los handlers de órdenes. Recibe los helpers del módulo de handlers para evitar una
+ * importación circular (handlers.js importa este archivo).
+ */
+export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina, posicionesBase }) {
+  const trading = () => db.trading;
+  const CON_ORDENES = ["INVERSIONISTA"];
+
+  const conSimulacion = crearConSimulacion({ db, error });
   const ruta = (roles, resolver) => protegido(roles, (ctx) => conSimulacion(resolver)(ctx));
 
   const ordenDelUsuario = (usuario, id) =>
@@ -822,6 +838,16 @@ export function crearHandlersOrdenes({ db, error, protegido, leerCuerpo, pagina,
           { tipo: "USUARIO", id: usuario.id },
           "Cancelada por el usuario"
         );
+        // El contrato dice que cancelar también crea una notificación.
+        const accionCancelada = orden.lado === "COMPRA" ? "la compra" : "la venta";
+        crearNotificacion(t.notificaciones, usuario.id, {
+          tipo: "ORDEN_CANCELADA",
+          titulo: "Orden cancelada",
+          mensaje:
+            `Cancelaste ${accionCancelada} de ${orden.cantidad} ${orden.ticker}.` +
+            (liberado ? ` Se liberaron ${monto(liberado)} USD.` : ""),
+          referenciaId: orden.id,
+        });
         return HttpResponse.json({
           id: orden.id,
           estado: "CANCELADA",
