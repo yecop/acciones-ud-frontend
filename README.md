@@ -221,6 +221,10 @@ El estado es coherente con saldo y portafolio: comprar reserva fondos, ejecutar 
 y cancelar libera el saldo. Cliente: `src/api/ordenesApi.js`. Las formas que el contrato no
 define (listas, historial, estados) están en [docs/trading-mock.md](docs/trading-mock.md).
 
+`src/mocks/notificaciones.js` simula `GET /notificaciones` y `PATCH /notificaciones/{id}/leida`
+(cliente `src/api/notificacionesApi.js`). Ejecutar o cancelar una orden crea su notificación.
+Consola: `window.__mock.notificaciones.crear()`, `.mercado("NYSE", false)` y `.noLeidas()`.
+
 Desde la consola del navegador (`npm start`): `window.__mock.ordenes.mercado(false)` (cierra el
 mercado), `.ejecutarPendientes()`, `.ejecutarParcial()`, `.estado(id, "ENVIADA")`,
 `.fallar("PROVEEDOR_NO_DISPONIBLE")`, `.latencia(2000)` y `.limpiar()`. Cuenta con órdenes de ejemplo: `laura@`; estado vacío: `nuevo@`.

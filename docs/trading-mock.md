@@ -1,4 +1,4 @@
-# SCRUM-35: mock de trading — órdenes (parte 1)
+# SCRUM-35: mock de trading — órdenes y notificaciones
 
 Fuente: respuestas del backend (22-nov). Cada punto va marcado como **[Definido]** (ya está en el esquema de la base de datos o en Jira) o **[Propuesta]** (falta acordarlo con backend: úsese para el mock, puede cambiar). Lo que backend no respondió se marca ⚠. Órdenes (SCRUM-38), propuestas, notificaciones y comisionistas (SCRUM-53, 51 y 52) siguen pendientes de su lado.
 
@@ -52,9 +52,33 @@ Fuente: respuestas del backend (22-nov). Cada punto va marcado como **[Definido]
 
 `.ejecutarPendientes()` ejecuta lo que falte; `.limpiar()` quita errores y latencia forzados.
 
+## Notificaciones (parte 2, `src/mocks/notificaciones.js`, cliente `src/api/notificacionesApi.js`)
+
+| Endpoint                           | Roles    | Origen de la forma                                                            |
+| ---------------------------------- | -------- | ----------------------------------------------------------------------------- |
+| `GET /notificaciones`              | INV, COM | Filtros `tipo`, `desde` y paginación del contrato; lista paginada [Propuesta] |
+| `PATCH /notificaciones/{id}/leida` | INV, COM | [Propuesta]                                                                   |
+
+- **Canales [Definido]:** `SMS`, `EMAIL` y `WHATSAPP` (ya existen en las preferencias del perfil). Las notificaciones del mock son internas (campana); el canal por el que llegan no se modela.
+- **Eventos [Definido]:** `APERTURA_CIERRE_MERCADO`, `RESUMEN_DIARIO_OPERACIONES` y `ORDEN_EJECUTADA`. Probablemente se añadan tipos para propuestas y alertas.
+- **Forma [Propuesta]:** `{ id, tipo, titulo, mensaje, leida, creadaEn, referenciaId }`; `referenciaId` apunta a la orden (o propuesta) que la originó, o es `null`.
+- **Privacidad [Definido]:** cada usuario solo ve y marca las suyas. Marcar una ajena o inexistente responde 404, igual que las órdenes.
+- **Orden → notificación:** completar la ejecución de una orden crea `ORDEN_EJECUTADA` (una ejecución parcial no notifica). Cancelar una orden crea `ORDEN_CANCELADA`: el contrato dice que cancelar genera una notificación, pero ⚠ no define su tipo.
+- ⚠ **Filtro `leida`:** no está en el contrato; el mock lo acepta (`leida=false`) para poder mostrar la cantidad de no leídas con `totalElementos`. Si backend no lo implementa, habría que contarlas en el cliente o pedir un endpoint de conteo.
+- **Orden:** más recientes primero. Marcar como leída es idempotente y devuelve la notificación actualizada.
+
+Estados de pantalla: `laura@correo.com` tiene 4 (2 sin leer); `nuevo@correo.com` ninguna (vacío). Carga y error con `window.__mock.ordenes.latencia(ms)` y `window.__mock.ordenes.fallar("ERROR_INTERNO", { ruta: "/notificaciones" })`. Para ver llegar una nueva: `window.__mock.notificaciones.crear()` o `.mercado("NYSE", false)`; `.noLeidas()` cuenta las pendientes.
+
+### Preguntas abiertas para backend (notificaciones)
+
+1. ¿Qué tipo (`tipo`) y mensaje lleva la notificación que genera cancelar una orden?
+2. ¿Existirá un filtro `leida` o un endpoint con el conteo de no leídas?
+3. ¿Hay "marcar todas como leídas"? ¿Y cuánto tiempo se conservan?
+4. Los tipos para propuestas y alertas, ¿cuáles serán y cuándo?
+
 ## Pendiente en las siguientes partes
 
-Notificaciones (canales SMS, EMAIL y WHATSAPP; eventos `APERTURA_CIERRE_MERCADO`, `RESUMEN_DIARIO_OPERACIONES` y `ORDEN_EJECUTADA`; forma `{ id, tipo, titulo, mensaje, leida, creadaEn, referenciaId }` y `PATCH /notificaciones/{id}/leida`, ambos [Propuesta] salvo canales y eventos) y comisionista (clientes, portafolio y órdenes del cliente, propuestas con `PENDIENTE_APROBACION → APROBADA → FIRMADA`, `RECHAZADA` o `VENCIDA`).
+Comisionista: clientes, portafolio y órdenes del cliente, propuestas (`PENDIENTE_APROBACION → APROBADA → FIRMADA`, `RECHAZADA` o `VENCIDA`, con una o más órdenes y vencimiento) y la orden de un COM con `clienteId`.
 
 ## Limitaciones conocidas
 
