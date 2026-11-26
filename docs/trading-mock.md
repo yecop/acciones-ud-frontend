@@ -84,6 +84,13 @@ Estados de pantalla: `laura@correo.com` tiene 4 (2 sin leer); `nuevo@correo.com`
 3. ¿Hay "marcar todas como leídas"? ¿Y cuánto tiempo se conservan?
 4. Los tipos para propuestas y alertas, ¿cuáles serán y cuándo?
 
+## Órdenes avanzadas y encolamiento (SCRUM-64)
+
+- El campo de precio cambia según el tipo: «Precio límite» (Limit), «Precio stop» (Stop Loss) y «Precio objetivo» (Take Profit), cada uno con su ayuda, el precio actual y cuánto se aleja el precio escrito (en %).
+- Avisos orientativos que **no bloquean** el envío (el backend decide): límite de compra sobre el mercado o de venta bajo el mercado, Stop Loss de venta sobre el mercado y Take Profit de venta bajo el mercado.
+- ⚠ El contrato no define cuándo se activa una Stop Loss o una Take Profit ni si aplican a compras; los avisos usan la convención habitual y solo cubren las ventas. Si backend define otra regla, el cambio está en `src/components/order/guiaPrecio.js`.
+- Con el mercado cerrado el formulario explica el encolamiento (orden pendiente hasta la próxima apertura, cancelable) antes de pulsar «Encolar Orden»; el flujo de confirmación ya existía.
+
 ## Pendiente en las siguientes partes
 
 Comisionista: clientes, portafolio y órdenes del cliente, propuestas (`PENDIENTE_APROBACION → APROBADA → FIRMADA`, `RECHAZADA` o `VENCIDA`, con una o más órdenes y vencimiento) y la orden de un COM con `clienteId`.

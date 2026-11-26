@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { avisoPrecio, GUIA_TIPO, textoDiferencia } from "./guiaPrecio.js";
 import styles from "./OrderForm.module.css";
 
 import OrderTypeSelector from "./OrderTypeSelector.jsx";
@@ -92,6 +93,12 @@ export default function OrderForm({
       price: effectivePrice,
     });
   }, [onDraftChange, asset.symbol, side, orderType, cantidadEntera, effectivePrice]);
+
+  const guia = GUIA_TIPO[orderType];
+  const diferencia = requiresPrice ? textoDiferencia(effectivePrice, asset.currentPrice) : null;
+  const aviso = requiresPrice
+    ? avisoPrecio({ type: orderType, side, price: effectivePrice, current: asset.currentPrice })
+    : null;
 
   const submitLabel = enviando ? "Enviando…" : isMarketOpen ? "Ejecutar Orden" : "Encolar Orden";
 
@@ -204,7 +211,7 @@ export default function OrderForm({
       {requiresPrice ? (
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="order-price">
-            Precio
+            {guia?.etiqueta ?? "Precio"}
           </label>
           <div className={styles.inputWrap}>
             <span className={styles.prefix}>USD</span>
@@ -219,13 +226,30 @@ export default function OrderForm({
               onChange={handlePriceChange}
             />
           </div>
-          <span className={styles.hint}>Precio límite por acción.</span>
+          <span className={styles.hint}>{guia?.ayuda}</span>
+          <span className={styles.hint}>
+            Precio actual {formatCurrency(asset.currentPrice)}
+            {diferencia && ` · ${diferencia}`}
+          </span>
+          {aviso && (
+            <p className={styles.aviso} role="status">
+              {aviso}
+            </p>
+          )}
         </div>
       ) : (
         <div className={styles.marketPrice}>
           <span className={styles.marketPriceLabel}>Precio de mercado (actual)</span>
           <span className={styles.marketPriceValue}>{formatCurrency(asset.currentPrice)}</span>
         </div>
+      )}
+
+      {!isMarketOpen && (
+        <p className={styles.colaAviso} role="note">
+          El mercado está cerrado. La orden quedará <strong>encolada</strong> y se enviará en la
+          próxima apertura; mientras siga pendiente la puedes cancelar y se libera el saldo
+          reservado.
+        </p>
       )}
 
       <OrderSummary
