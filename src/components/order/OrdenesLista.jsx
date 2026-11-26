@@ -22,6 +22,7 @@ const formatoHora = new Intl.DateTimeFormat("es-CO", { timeStyle: "short" });
  * @param {boolean} [props.mostrarNota] Nota «Mostrando las N más recientes» (apagar si hay paginación).
  * @param {import("react").ReactNode} [props.vacio] Mensaje cuando no hay órdenes.
  * @param {import("react").ReactNode} [props.encabezadoExtra] Contenido junto al título (enlaces).
+ * @param {boolean} [props.soloLectura] Oculta la acción de cancelar (p. ej. el comisionista ve órdenes del cliente).
  */
 export default function OrdenesLista({
   pagina,
@@ -34,6 +35,7 @@ export default function OrdenesLista({
   mostrarNota = true,
   vacio = "Todavía no tienes órdenes. Crea la primera desde el formulario «Nueva orden».",
   encabezadoExtra,
+  soloLectura = false,
 }) {
   const [mensaje, setMensaje] = useState(null);
 
@@ -141,11 +143,13 @@ export default function OrdenesLista({
                           Detalle
                         </Link>
                       )}
-                      <BotonCancelarOrden
-                        orden={orden}
-                        onResultado={setMensaje}
-                        onTerminado={onCambio}
-                      />
+                      {!soloLectura && (
+                        <BotonCancelarOrden
+                          orden={orden}
+                          onResultado={setMensaje}
+                          onTerminado={onCambio}
+                        />
+                      )}
                     </td>
                   </tr>
                 );

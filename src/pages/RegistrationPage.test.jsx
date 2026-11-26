@@ -49,7 +49,8 @@ it("rechaza confirmación distinta y celular inválido conservando los datos", a
   expect(screen.getByRole("alert")).toHaveTextContent(/contraseñas deben coincidir/);
   expect(screen.getByLabelText("Celular")).toHaveAccessibleDescription(/celular válido/);
   expect(screen.getByLabelText("Correo electrónico")).toHaveValue("nueva@correo.com");
-  expect(db.usuarios).toHaveLength(6);
+  // No se creó ninguna cuenta nueva (solo las 8 de demostración).
+  expect(db.usuarios.some((u) => u.correo === "nueva@correo.com")).toBe(false);
 });
 
 it("registra contra MSW, guarda el perfil y muestra pendiente de alta sin iniciar sesión", async () => {

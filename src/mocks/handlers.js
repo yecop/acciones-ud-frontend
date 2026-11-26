@@ -12,6 +12,7 @@ import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
 import { crearHandlersFondos } from "./fondos.js";
 import { crearHandlersGestion } from "./gestion.js";
 import { crearHandlersPremium, estadoPremium } from "./premium.js";
+import { crearHandlersComisionista } from "./comisionista.js";
 import { crearHandlersNotificaciones } from "./notificaciones.js";
 import {
   aplicarTenencias,
@@ -664,4 +665,15 @@ export const handlers = [
   }),
   ...crearHandlersFondos({ raiz: RAIZ, db, protegido, error, leerCuerpo, pagina }),
   ...crearHandlersGestion({ raiz: RAIZ, db, protegido, error, leerCuerpo, pagina }),
+
+  // ---- Comisionista: clientes, estrategias y propuestas (SCRUM-35, parte 3) --
+  ...crearHandlersComisionista({
+    db,
+    error,
+    protegido,
+    leerCuerpo,
+    pagina,
+    conSimulacion: crearConSimulacion({ db, error }),
+    posicionesValoradas,
+  }),
 ];

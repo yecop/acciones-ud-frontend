@@ -52,7 +52,7 @@ export default function OrdenesPage() {
         <h1 className={styles.heading}>Operar</h1>
         <p className={styles.aviso} role="status">
           Como comisionista no creas órdenes con tu propia cuenta: las órdenes de tus clientes se
-          proponen y se firman desde «Mis clientes» (en construcción).
+          proponen y se firman desde <Link to="/propuestas">Propuestas</Link>.
         </p>
       </div>
     );

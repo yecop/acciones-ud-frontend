@@ -1,5 +1,6 @@
 import { HttpResponse, http as rest } from "msw";
 import { nuevoUuid } from "../api/httpClient.js";
+import { crearEstadoComisionista, USUARIO_MATEO, USUARIO_VALENTINA } from "./comisionistaDatos.js";
 import { crearNotificacion, notificacionesIniciales } from "./notificaciones.js";
 import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
 
@@ -208,6 +209,9 @@ function semillas() {
 
 const SALDOS_INICIALES = {
   [USUARIO_LAURA]: { disponible: 4250.0, reservado: 351.2 },
+  // Clientes demo de comisionista (SCRUM-65).
+  [USUARIO_MATEO]: { disponible: 6800.0, reservado: 0 },
+  [USUARIO_VALENTINA]: { disponible: 2100.0, reservado: 0 },
 };
 
 /** Estado de trading del mock; `db.trading` lo apunta y `db.reiniciar()` lo restablece. */
@@ -216,6 +220,8 @@ export function crearEstadoTrading() {
     ordenes: semillas(),
     /** Notificaciones de todos los usuarios (SCRUM-35, parte 2). */
     notificaciones: notificacionesIniciales(),
+    /** Estrategias y propuestas de comisionista (SCRUM-35, parte 3). */
+    comisionista: crearEstadoComisionista(),
     /** `usuarioId:Idempotency-Key` → { huella, status, cuerpo } (única por cuenta, no expira). */
     idempotencia: new Map(),
     /** autorizacionId → { usuarioId, cuerpo, expira, resultado } (doble autorización). */
@@ -449,7 +455,7 @@ export function forzarEstado(trading, id, estado, motivo = "Estado forzado desde
 
 // -------------------------------------------------------------------- vistas
 
-function vistaOrden(orden) {
+export function vistaOrden(orden) {
   const ejecutada = cantidadEjecutada(orden);
   const importe = orden.ejecuciones.reduce((s, e) => s + e.cantidad * Number(e.precio), 0);
   return {
@@ -475,6 +481,54 @@ function vistaOrden(orden) {
     actualizadaEn: orden.actualizadaEn,
   };
 }
+
+/**
+ * Orden creada por un comisionista al firmar una propuesta aprobada. [Propuesta] queda en
+ * FIRMADA_POR_COMISIONISTA (no es cancelable ni la ejecuta el mock) y no reserva fondos.
+ * Valida que el ticker exista: la propuesta ya se validó al crearla.
+ */
+export function crearOrdenFirmada(trading, cliente, comisionista, item) {
+  const accion = resolverAccion(item.ticker);
+  const c = calcular(item, accion);
+  const ahora = new Date().toISOString();
+  const orden = {
+    id: nuevoUuid(),
+    usuarioId: cliente.id,
+    ticker: accion.ticker,
+    lado: item.lado,
+    tipo: item.tipo,
+    cantidad: item.cantidad,
+    precioLimite: item.tipo === "LIMIT" ? monto(item.precioLimite) : null,
+    precioStop: ["STOP_LOSS", "TAKE_PROFIT"].includes(item.tipo) ? monto(item.precioStop) : null,
+    precioEstimado: monto(c.precio),
+    totalTransaccion: monto(c.total),
+    comisionValor: c.comision,
+    conComisionista: true,
+    totalDescontado: c.totalDescontado,
+    valorRestante: c.totalDescontado,
+    estado: "FIRMADA_POR_COMISIONISTA",
+    encolada: false,
+    ejecuciones: [],
+    validadaPor: null,
+    validadaEn: null,
+    creadaEn: ahora,
+    actualizadaEn: ahora,
+    historial: [
+      entradaHistorial(
+        "FIRMADA_POR_COMISIONISTA",
+        ahora,
+        { tipo: "COMISIONISTA", id: comisionista.id },
+        "Firmada por el comisionista a partir de una propuesta aprobada",
+        accion.ticker
+      ),
+    ],
+  };
+  trading.ordenes.unshift(orden);
+  return orden;
+}
+
+/** Validación de una orden dentro de una propuesta (mismas reglas que `POST /ordenes`). */
+export const validarItemDeOrden = validarSolicitud;
 
 // ----------------------------------------------------------------- handlers
 

@@ -24,6 +24,8 @@ export const MENSAJES_ERROR = {
   // 409
   MERCADO_CERRADO: "El mercado está cerrado. Puedes encolar la orden para la próxima apertura.",
   ORDEN_NO_CANCELABLE: "La orden ya no se puede cancelar porque el mercado ya la procesó.",
+  // ⚠ Código provisional: backend aún no define el error de una propuesta vencida.
+  PROPUESTA_VENCIDA: "La propuesta venció y ya no admite cambios.",
   TRANSICION_INVALIDA: "El estado actual no permite esta acción.",
   CONFLICTO_IDEMPOTENCIA: "Esta solicitud ya se envió con datos distintos. Vuelve a intentarlo.",
   CORREO_DUPLICADO: "Ya existe una cuenta con este correo.",

@@ -94,6 +94,37 @@ Estados de pantalla: `laura@correo.com` tiene 4 (2 sin leer); `nuevo@correo.com`
 - **Qué hacer en cada estado** (`ayudaEstado`, textos [Propuesta]): En revisión (esperar o cancelar), Detenida (no se ejecuta, no se puede reactivar ni cancelar; crear una orden nueva o contactar a soporte). Se muestran en la lista y en el detalle.
 - ⚠ Preguntas para backend: ¿por qué una orden pasa a EN_REVISION y a DETENIDA, quién lo decide y cuánto dura? ¿DETENIDA es definitiva? ¿Las Stop Loss/Take Profit de compra existen?
 
+## Comisionista y propuestas (SCRUM-35 parte 3 y SCRUM-65)
+
+Todo lo de esta sección es **[Propuesta]**: backend aún no define estos endpoints (SCRUM-51/52/53). El mock y las pantallas siguen esta forma para poder cambiarla en un solo lugar (`src/api/comisionistaApi.js`, `src/api/propuestasApi.js`, `src/mocks/comisionista.js`).
+
+**Usuarios demo:** `carlos@correo.com` (COM, maneja a «Carlos R.»), `mateo@correo.com` (INV, cliente de Carlos; trae 5 propuestas de ejemplo), `valentina@correo.com` (INV, cliente de Andrea P.: sirve para probar el acceso a un cliente ajeno), `laura@correo.com` (INV sin comisionista, para elegir uno).
+
+**Flujo supuesto:** el comisionista crea la propuesta → el cliente la aprueba o rechaza → el comisionista la firma y entonces se crean las órdenes del cliente (estado `FIRMADA_POR_COMISIONISTA`, sin reservar fondos ni ejecutarse en el mock).
+
+| Endpoint | Rol | Notas |
+| --- | --- | --- |
+| `GET /clientes`, `GET /clientes/{id}` | COM | Solo clientes asignados; otro cliente → 404 |
+| `GET /clientes/{id}/portafolio/posiciones`, `GET /clientes/{id}/ordenes` | COM | Solo lectura (el comisionista no cancela órdenes del cliente) |
+| `GET/POST /estrategias`, `PATCH /estrategias/{id}` | COM | Nombre, descripción, perfil de riesgo; se archivan (estado `ACTIVA`/`ARCHIVADA`), no se borran |
+| `GET /propuestas`, `GET /propuestas/{id}` | INV, COM | INV ve las suyas; COM las de sus clientes; filtros `estado`, `clienteId`; el detalle trae `historial` |
+| `POST /propuestas` | COM | `{clienteId, titulo, nota?, estrategiaId?, ordenes[], venceEn}`; 1–10 órdenes, vigencia máx. 30 días |
+| `POST /propuestas/{id}/aprobar` y `/rechazar {motivo}` | INV | Solo desde `PENDIENTE_APROBACION` |
+| `POST /propuestas/{id}/firmar` | COM | Solo desde `APROBADA` |
+
+- **Estados:** `PENDIENTE_APROBACION → APROBADA → FIRMADA`, o `RECHAZADA` / `VENCIDA`. Una propuesta vigente cuya `venceEn` pasó se marca `VENCIDA` (actor `SISTEMA`).
+- **Errores:** rol equivocado → 403 `ACCESO_DENEGADO`; propuesta o cliente ajeno → 404 (no se revela si existe); acción en estado equivocado → 409 `TRANSICION_INVALIDA`; propuesta vencida → 409 `PROPUESTA_VENCIDA` (código provisional); validación → 400 con `detalles`.
+- **Pantallas:** INV `/mi-comisionista` (elegir, cambiar, dejar; usa los endpoints de perfil que ya existían) y `/propuestas` (+ detalle con Aprobar/Rechazar); COM `/comisionista` (clientes) y `/comisionista/clientes/:id`, `/estrategias`, `/propuestas` (+ `/propuestas/nueva` y detalle con Firmar). Aprobar, rechazar y firmar piden confirmación y muestran el estado nuevo. 403, 404, vencimiento y errores de red tienen mensaje propio.
+
+**Preguntas abiertas para backend:**
+1. ¿Quién firma? Se asumió que el comisionista firma tras la aprobación del cliente; confirmar el flujo y si la firma crea las órdenes directamente.
+2. ¿Qué pasa con las propuestas vigentes cuando el cliente cambia o deja a su comisionista? (el mock deja la firma en 409 y la pantalla lo advierte).
+3. ¿Cliente ajeno → 404 o 403? (la interfaz trata ambos igual).
+4. ¿Qué es exactamente una «estrategia» (campos, si se vincula a órdenes o a portafolios)?
+5. Código de error de una propuesta vencida y vigencia máxima.
+6. Tipos de notificación para propuestas (recibida, aprobada, rechazada, firmada): no se generan en el mock.
+7. Reserva de fondos y comisión (60/40) al firmar: ¿cuándo se descuentan?
+
 ## Pendiente en las siguientes partes
 
 Comisionista: clientes, portafolio y órdenes del cliente, propuestas (`PENDIENTE_APROBACION → APROBADA → FIRMADA`, `RECHAZADA` o `VENCIDA`, con una o más órdenes y vencimiento) y la orden de un COM con `clienteId`.
