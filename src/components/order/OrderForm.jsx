@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { avisoPrecio, GUIA_TIPO, textoDiferencia } from "./guiaPrecio.js";
+import { avisoPrecio, bloqueoPrecio, GUIA_TIPO, textoDiferencia } from "./guiaPrecio.js";
+import { textoMomento } from "./horaMercado.js";
 import styles from "./OrderForm.module.css";
 
 import OrderTypeSelector from "./OrderTypeSelector.jsx";
@@ -42,6 +43,7 @@ export default function OrderForm({
   asset = { symbol: "AAPL", name: "Apple Inc.", currentPrice: 176.5 },
   saldoDisponible = 0,
   isMarketOpen = true,
+  mercado = null,
   defaultType = "market",
   onSubmit,
   onDraftChange,
@@ -78,7 +80,11 @@ export default function OrderForm({
   const insufficientFunds = isBuy && total > saldoDisponible;
   // En ventas solo el backend sabe cuántas acciones hay: `fondosSuficientes` es false si faltan.
   const insufficientShares = !isBuy && simulacion?.fondosSuficientes === false;
-  const canSubmit = hasValidQuantity && hasValidPrice && !insufficientFunds && !insufficientShares;
+  const bloqueo = requiresPrice
+    ? bloqueoPrecio({ type: orderType, side, price: effectivePrice, current: asset.currentPrice })
+    : null;
+  const canSubmit =
+    hasValidQuantity && hasValidPrice && !insufficientFunds && !insufficientShares && !bloqueo;
 
   const enviando = envio.fase === "enviando";
   const bloqueado = envio.fase !== "idle" && envio.fase !== "error";
@@ -94,6 +100,9 @@ export default function OrderForm({
     });
   }, [onDraftChange, asset.symbol, side, orderType, cantidadEntera, effectivePrice]);
 
+  const proximaApertura = mercado?.proximaApertura
+    ? textoMomento(mercado.proximaApertura, mercado.zonaHoraria)
+    : null;
   const guia = GUIA_TIPO[orderType];
   const diferencia = requiresPrice ? textoDiferencia(effectivePrice, asset.currentPrice) : null;
   const aviso = requiresPrice
@@ -223,6 +232,8 @@ export default function OrderForm({
               placeholder="0.00"
               value={price}
               disabled={bloqueado}
+              aria-invalid={bloqueo ? true : undefined}
+              aria-describedby={bloqueo ? "order-price-bloqueo" : undefined}
               onChange={handlePriceChange}
             />
           </div>
@@ -231,7 +242,12 @@ export default function OrderForm({
             Precio actual {formatCurrency(asset.currentPrice)}
             {diferencia && ` · ${diferencia}`}
           </span>
-          {aviso && (
+          {bloqueo && (
+            <p id="order-price-bloqueo" className={styles.bloqueo} role="alert">
+              {bloqueo}
+            </p>
+          )}
+          {!bloqueo && aviso && (
             <p className={styles.aviso} role="status">
               {aviso}
             </p>
@@ -249,6 +265,12 @@ export default function OrderForm({
           El mercado está cerrado. La orden quedará <strong>encolada</strong> y se enviará en la
           próxima apertura; mientras siga pendiente la puedes cancelar y se libera el saldo
           reservado.
+          {proximaApertura && (
+            <>
+              {" "}
+              <strong>Próxima apertura:</strong> {proximaApertura}.
+            </>
+          )}
         </p>
       )}
 
@@ -273,7 +295,7 @@ export default function OrderForm({
           {submitLabel}
         </button>
       ) : (
-        <OrderFlowPanel envio={envio} acciones={acciones} onNueva={handleNueva} />
+        <OrderFlowPanel envio={envio} acciones={acciones} mercado={mercado} onNueva={handleNueva} />
       )}
     </section>
   );

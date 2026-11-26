@@ -207,3 +207,12 @@
   font-size: var(--font-size-sm);
   color: var(--color-text);
 }
+
+.bloqueo {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--color-negative);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+}

@@ -55,3 +55,43 @@ export const OPCIONES_ESTADO = Object.entries(ESTADOS).map(([valor, { etiqueta }
   // ⚠ Una orden totalmente ejecutada sigue en EN_EJECUCION (ver `etiquetaEstado`).
   etiqueta: valor === "EN_EJECUCION" ? "En ejecución o ejecutada" : etiqueta,
 }));
+
+/**
+ * Qué significa el estado y qué puede hacer la persona. Los textos son [Propuesta]: backend no
+ * definió el motivo de EN_REVISION ni de DETENIDA (⚠ preguntas abiertas en docs/trading-mock.md).
+ * @returns {{corta:string, detalle:string, tono:"aviso"|"negativo"|"neutro"}|null}
+ */
+export function ayudaEstado(orden) {
+  switch (orden?.estado) {
+    case "PENDIENTE":
+      return orden.encolada
+        ? {
+            corta: "Programada para la apertura",
+            detalle:
+              "Esta orden está programada: se enviará cuando abra el mercado. Mientras siga pendiente puedes cancelarla y se libera el saldo reservado.",
+            tono: "aviso",
+          }
+        : {
+            corta: "Esperando su turno",
+            detalle:
+              "La orden está pendiente de ejecutarse. Mientras siga pendiente puedes cancelarla.",
+            tono: "neutro",
+          };
+    case "EN_REVISION":
+      return {
+        corta: "En revisión: puedes esperar o cancelar",
+        detalle:
+          "La orden está siendo revisada antes de continuar. No tienes que hacer nada: te avisaremos el resultado. Si ya no la quieres, puedes cancelarla y se libera el saldo reservado.",
+        tono: "aviso",
+      };
+    case "DETENIDA":
+      return {
+        corta: "Detenida: no se ejecutará",
+        detalle:
+          "La orden fue detenida y no se ejecutará; no se puede reactivar ni cancelar. Revisa el motivo en el historial de estados. Si aún quieres operar, crea una orden nueva; si no entiendes el motivo, contacta a soporte con la referencia de la orden.",
+        tono: "negativo",
+      };
+    default:
+      return null;
+  }
+}

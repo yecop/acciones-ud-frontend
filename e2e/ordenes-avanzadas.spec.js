@@ -12,7 +12,7 @@ async function abrirOperar(page, { mercadoAbierto }) {
 }
 
 test.describe("órdenes avanzadas y encolamiento", () => {
-  test("un Stop Loss de venta por encima del precio actual muestra un aviso que no bloquea", async ({
+  test("un Stop Loss de venta por encima del precio actual se bloquea con su motivo", async ({
     page,
   }) => {
     await abrirOperar(page, { mercadoAbierto: true });
@@ -24,14 +24,43 @@ test.describe("órdenes avanzadas y encolamiento", () => {
 
     await expect(page.getByText(/sobre el precio actual/i)).toBeVisible();
     await expect(
-      page.getByRole("status").filter({ hasText: /debería estar por debajo/i })
+      page.getByRole("alert").filter({ hasText: /debe estar por debajo/i })
     ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Ejecutar Orden" })).toBeDisabled();
   });
 
   test("con el mercado cerrado se explica el encolamiento antes de enviar", async ({ page }) => {
     await abrirOperar(page, { mercadoAbierto: false });
 
     await expect(page.getByRole("note")).toContainText(/encolada/i);
+    await expect(page.getByRole("note")).toContainText(/próxima apertura:.*hora de Nueva York/i);
     await expect(page.getByRole("button", { name: "Encolar Orden" })).toBeVisible();
+  });
+
+  test("una orden en revisión o detenida explica qué se puede hacer", async ({ page }) => {
+    await iniciarSesion(page, "laura@correo.com");
+    await page
+      .getByRole("button", { name: /^historial$/i })
+      .first()
+      .click();
+
+    await page
+      .getByRole("link", { name: /ver detalle de la orden de aapl/i })
+      .first()
+      .click();
+    await expect(
+      page.getByRole("complementary", { name: /qué significa este estado/i })
+    ).toBeVisible();
+    await page.getByRole("link", { name: /volver al historial/i }).click();
+
+    await page.getByLabel("Estado").selectOption("DETENIDA");
+    await page.getByRole("button", { name: "Aplicar" }).click();
+    await page
+      .getByRole("link", { name: /ver detalle de la orden de/i })
+      .first()
+      .click();
+    await expect(
+      page.getByRole("complementary", { name: /qué significa este estado/i })
+    ).toContainText(/no se puede reactivar ni cancelar/i);
   });
 });

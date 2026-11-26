@@ -112,6 +112,7 @@ export default function OrdenesPage() {
               }}
               saldoDisponible={saldo ? Number(saldo.disponible) : 0}
               isMarketOpen={operable.mercadoAbierto ?? true}
+              mercado={operable.mercado}
               onCreada={alCambiar}
             />
           )}

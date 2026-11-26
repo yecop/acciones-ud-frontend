@@ -43,7 +43,7 @@ describe("órdenes avanzadas y encolamiento (SCRUM-64)", () => {
     expect(screen.queryByLabelText(/^precio/i)).not.toBeInTheDocument();
   });
 
-  it("muestra cuánto se aleja el precio del actual y avisa de un Stop Loss de venta mal ubicado", async () => {
+  it("muestra cuánto se aleja el precio del actual y bloquea un Stop Loss de venta mal ubicado", async () => {
     const usuario = userEvent.setup();
     await entrar();
     renderApp("/operar");
@@ -54,12 +54,12 @@ describe("órdenes avanzadas y encolamiento (SCRUM-64)", () => {
 
     await usuario.type(precio, "9999");
     expect(await screen.findByText(/sobre el precio actual/i)).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(/debería estar por debajo/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/debe estar por debajo/i);
 
     await usuario.clear(precio);
     await usuario.type(precio, "1");
     expect(await screen.findByText(/bajo el precio actual/i)).toBeInTheDocument();
-    expect(screen.queryByText(/debería estar por debajo/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/debe estar por debajo/i)).not.toBeInTheDocument();
   });
 
   it("el aviso no bloquea: se puede crear la orden igualmente", async () => {
@@ -111,5 +111,65 @@ describe("órdenes avanzadas y encolamiento (SCRUM-64)", () => {
     renderApp("/operar");
     await screen.findByRole("tab", { name: "Market Order" });
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+
+  it("el botón queda deshabilitado mientras la combinación no sea válida", async () => {
+    const usuario = userEvent.setup();
+    await entrar();
+    renderApp("/operar");
+
+    await usuario.click(await screen.findByRole("button", { name: "Vender" }));
+    await usuario.click(screen.getByRole("tab", { name: "Take Profit" }));
+    await usuario.type(screen.getByLabelText("Cantidad"), "1");
+    const precio = screen.getByLabelText("Precio objetivo");
+    await usuario.type(precio, "1"); // objetivo de venta muy por debajo del mercado
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/debe estar por encima/i);
+    expect(precio).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: "Ejecutar Orden" })).toBeDisabled();
+
+    await usuario.clear(precio);
+    await usuario.type(precio, "9999");
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(precio).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("con el mercado cerrado muestra la próxima apertura en la hora del mercado y en la tuya", async () => {
+    util.mercado(false);
+    await entrar();
+    renderApp("/operar");
+
+    const nota = await screen.findByRole("note");
+    await waitFor(() => expect(nota).toHaveTextContent(/próxima apertura:/i));
+    expect(nota).toHaveTextContent(/hora de Nueva York/);
+    expect(nota).toHaveTextContent(/tu hora:/);
+  });
+
+  it("la confirmación del encolamiento repite la apertura con la hora del mercado", async () => {
+    const usuario = userEvent.setup();
+    util.mercado(false);
+    await entrar();
+    renderApp("/operar");
+
+    await usuario.type(await screen.findByLabelText("Cantidad"), "1");
+    await usuario.click(await screen.findByRole("button", { name: "Encolar Orden" }));
+    const dialogo = await screen.findByRole("alertdialog", { name: /confirmar encolamiento/i });
+    expect(dialogo).toHaveTextContent(/hora de Nueva York/);
+    expect(dialogo).toHaveTextContent(/pendiente/i);
+    expect(screen.getByRole("button", { name: /confirmar y encolar/i })).toBeInTheDocument();
+  });
+
+  it("una orden encolada aparece como programada en la lista y en el detalle", async () => {
+    const usuario = userEvent.setup();
+    util.mercado(false);
+    await entrar();
+    renderApp("/operar");
+
+    await usuario.type(await screen.findByLabelText("Cantidad"), "1");
+    await usuario.click(await screen.findByRole("button", { name: "Encolar Orden" }));
+    await usuario.click(screen.getByRole("button", { name: /confirmar y encolar/i }));
+    expect(await screen.findByText(/Orden encolada · Pendiente/)).toBeInTheDocument();
+    expect((await screen.findAllByText("Programada para la apertura")).length).toBeGreaterThan(0);
+    expect(db.trading.ordenes[0].encolada).toBe(true);
   });
 });

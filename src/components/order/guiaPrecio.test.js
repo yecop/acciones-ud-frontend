@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { avisoPrecio, diferenciaPorcentual, textoDiferencia } from "./guiaPrecio.js";
+import { avisoPrecio, bloqueoPrecio, diferenciaPorcentual, textoDiferencia } from "./guiaPrecio.js";
 
 describe("guiaPrecio", () => {
   it("calcula la diferencia porcentual y la redacta", () => {
@@ -22,20 +22,30 @@ describe("guiaPrecio", () => {
     expect(avisoPrecio({ type: "limit", side: "sell", price: 105, current: 100 })).toBeNull();
   });
 
-  it("avisa de Stop Loss y Take Profit de venta mal ubicados", () => {
-    expect(avisoPrecio({ type: "stop", side: "sell", price: 105, current: 100 })).toMatch(
+  it("bloquea un Stop Loss o Take Profit de venta mal ubicado", () => {
+    expect(bloqueoPrecio({ type: "stop", side: "sell", price: 105, current: 100 })).toMatch(
       /Stop Loss/
     );
-    expect(avisoPrecio({ type: "stop", side: "sell", price: 90, current: 100 })).toBeNull();
-    expect(avisoPrecio({ type: "take", side: "sell", price: 95, current: 100 })).toMatch(
+    expect(bloqueoPrecio({ type: "stop", side: "sell", price: 100, current: 100 })).toMatch(
+      /Stop Loss/
+    );
+    expect(bloqueoPrecio({ type: "stop", side: "sell", price: 90, current: 100 })).toBeNull();
+    expect(bloqueoPrecio({ type: "take", side: "sell", price: 95, current: 100 })).toMatch(
       /Take Profit/
     );
-    expect(avisoPrecio({ type: "take", side: "sell", price: 110, current: 100 })).toBeNull();
+    expect(bloqueoPrecio({ type: "take", side: "sell", price: 110, current: 100 })).toBeNull();
+  });
+
+  it("el límite solo avisa y nunca bloquea", () => {
+    expect(bloqueoPrecio({ type: "limit", side: "buy", price: 120, current: 100 })).toBeNull();
+    expect(bloqueoPrecio({ type: "limit", side: "sell", price: 90, current: 100 })).toBeNull();
   });
 
   it("no opina de compras con stop/take ni sin precio", () => {
-    expect(avisoPrecio({ type: "stop", side: "buy", price: 90, current: 100 })).toBeNull();
-    expect(avisoPrecio({ type: "take", side: "buy", price: 110, current: 100 })).toBeNull();
+    expect(avisoPrecio({ type: "stop", side: "sell", price: 105, current: 100 })).toBeNull();
+    expect(bloqueoPrecio({ type: "stop", side: "buy", price: 90, current: 100 })).toBeNull();
+    expect(bloqueoPrecio({ type: "take", side: "buy", price: 110, current: 100 })).toBeNull();
+    expect(bloqueoPrecio({ type: "stop", side: "sell", price: 0, current: 100 })).toBeNull();
     expect(avisoPrecio({ type: "limit", side: "buy", price: 0, current: 100 })).toBeNull();
     expect(avisoPrecio({ type: "market", side: "buy", price: 100, current: 100 })).toBeNull();
   });

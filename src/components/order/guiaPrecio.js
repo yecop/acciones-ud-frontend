@@ -1,7 +1,7 @@
 /**
- * Ayudas del campo de precio según el tipo de orden. Son orientativas y NO bloquean el envío:
- * quien decide si una orden es válida es el backend (⚠ cuándo se activa una Stop Loss o una
- * Take Profit no está definido en el contrato; aquí se usa la convención habitual del mercado).
+ * Ayudas y reglas del campo de precio según el tipo de orden. El backend sigue siendo quien valida
+ * (⚠ cuándo se activa una Stop Loss o una Take Profit no está definido en el contrato; aquí se usa
+ * la convención habitual del mercado).
  */
 
 export const GUIA_TIPO = {
@@ -40,24 +40,30 @@ export function textoDiferencia(precio, actual) {
 }
 
 /**
- * Aviso no bloqueante cuando el precio parece inconsistente con el tipo y la operación:
- * - Limit de compra por encima del mercado, o de venta por debajo: se ejecutaría de inmediato.
- * - Stop Loss de venta por encima del mercado: no limita pérdidas, se activaría de inmediato.
- * - Take Profit de venta por debajo del mercado: se activaría de inmediato.
+ * Combinaciones que la interfaz NO deja enviar: un Stop Loss de venta en o sobre el precio actual
+ * y una Take Profit de venta en o bajo el precio actual se activarían de inmediato, que no es lo
+ * que significan esos tipos. ⚠ Regla de la convención del mercado: el contrato no la define y
+ * backend puede cambiarla (todas las reglas viven en este archivo).
+ * @returns {string|null} motivo del bloqueo
+ */
+export function bloqueoPrecio({ type, side, price, current }) {
+  if (!(price > 0) || !(current > 0) || side === "buy") return null;
+  if (type === "stop" && price >= current)
+    return "Un Stop Loss de venta debe estar por debajo del precio actual; si no, se activaría de inmediato.";
+  if (type === "take" && price <= current)
+    return "Una Take Profit de venta debe estar por encima del precio actual; si no, se activaría de inmediato.";
+  return null;
+}
+
+/**
+ * Aviso no bloqueante: un límite que se ejecutaría de inmediato al precio de mercado.
  * @returns {string|null}
  */
 export function avisoPrecio({ type, side, price, current }) {
-  if (!(price > 0) || !(current > 0)) return null;
-  const compra = side === "buy";
-  if (type === "limit") {
-    if (compra && price > current)
-      return "Tu límite de compra está por encima del precio actual: se ejecutaría de inmediato al precio de mercado.";
-    if (!compra && price < current)
-      return "Tu límite de venta está por debajo del precio actual: se ejecutaría de inmediato al precio de mercado.";
-  }
-  if (type === "stop" && !compra && price >= current)
-    return "Un Stop Loss de venta debería estar por debajo del precio actual; así se activaría de inmediato.";
-  if (type === "take" && !compra && price <= current)
-    return "Una Take Profit de venta debería estar por encima del precio actual; así se activaría de inmediato.";
+  if (!(price > 0) || !(current > 0) || type !== "limit") return null;
+  if (side === "buy" && price > current)
+    return "Tu límite de compra está por encima del precio actual: se ejecutaría de inmediato al precio de mercado.";
+  if (side !== "buy" && price < current)
+    return "Tu límite de venta está por debajo del precio actual: se ejecutaría de inmediato al precio de mercado.";
   return null;
 }

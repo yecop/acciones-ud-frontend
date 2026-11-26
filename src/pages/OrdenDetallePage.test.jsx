@@ -102,4 +102,29 @@ describe("detalle de orden (SCRUM-62)", () => {
     await usuario.click(screen.getByRole("button", { name: /reintentar/i }));
     expect(await screen.findByRole("list", { name: /cambios de estado/i })).toBeInTheDocument();
   });
+
+  it("una orden en revisión explica qué puede hacer la persona", async () => {
+    await entrar();
+    renderApp(`/historial/${id(6)}`);
+    const ayuda = await screen.findByRole("complementary", { name: /qué significa este estado/i });
+    expect(ayuda).toHaveTextContent(/en revisión/i);
+    expect(ayuda).toHaveTextContent(/puedes cancelarla/i);
+    expect(screen.getByRole("button", { name: /cancelar orden de aapl/i })).toBeInTheDocument();
+  });
+
+  it("una orden detenida explica que no se puede cancelar ni reactivar", async () => {
+    await entrar();
+    renderApp(`/historial/${id(8)}`);
+    const ayuda = await screen.findByRole("complementary", { name: /qué significa este estado/i });
+    expect(ayuda).toHaveTextContent(/no se puede reactivar ni cancelar/i);
+    expect(ayuda).toHaveTextContent(/orden nueva/i);
+    expect(screen.queryByRole("button", { name: /cancelar orden/i })).not.toBeInTheDocument();
+  });
+
+  it("una orden ya ejecutada no muestra ayuda de estado", async () => {
+    await entrar();
+    renderApp(`/historial/${id(3)}`);
+    await screen.findByRole("heading", { name: /compra de tsla/i });
+    expect(screen.queryByRole("complementary", { name: /qué significa/i })).not.toBeInTheDocument();
+  });
 });

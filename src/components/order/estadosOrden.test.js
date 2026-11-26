@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { etiquetaEstado, etiquetaLado, etiquetaTipo, puedeCancelar } from "./estadosOrden.js";
+import {
+  ayudaEstado,
+  etiquetaEstado,
+  etiquetaLado,
+  etiquetaTipo,
+  puedeCancelar,
+} from "./estadosOrden.js";
 
 describe("estadosOrden", () => {
   it("etiqueta los 10 estados definidos por backend", () => {
@@ -45,5 +51,28 @@ describe("estadosOrden", () => {
   it("etiquetas de tipo y lado", () => {
     expect(etiquetaTipo("STOP_LOSS")).toBe("Stop Loss");
     expect(etiquetaLado("VENTA")).toBe("Venta");
+  });
+
+  it("explica qué puede hacer la persona en cada estado que lo necesita", () => {
+    expect(ayudaEstado({ estado: "PENDIENTE", encolada: true }).corta).toMatch(/programada/i);
+    expect(ayudaEstado({ estado: "PENDIENTE", encolada: true }).detalle).toMatch(/cancelarla/);
+    expect(ayudaEstado({ estado: "EN_REVISION" }).detalle).toMatch(
+      /esperar|no tienes que hacer nada/i
+    );
+    expect(ayudaEstado({ estado: "EN_REVISION" }).detalle).toMatch(/cancelarla/);
+    const detenida = ayudaEstado({ estado: "DETENIDA" });
+    expect(detenida.tono).toBe("negativo");
+    expect(detenida.detalle).toMatch(/no se puede reactivar ni cancelar/);
+    expect(detenida.detalle).toMatch(/orden nueva/);
+    expect(ayudaEstado({ estado: "CANCELADA" })).toBeNull();
+  });
+
+  it("la ayuda de cancelar coincide con la regla de cancelación", () => {
+    for (const estado of ["PENDIENTE", "EN_REVISION", "DETENIDA"]) {
+      const dice =
+        /cancelarla/.test(ayudaEstado({ estado }).detalle) &&
+        !/ni cancelar/.test(ayudaEstado({ estado }).detalle);
+      expect(dice).toBe(puedeCancelar({ estado }));
+    }
   });
 });
