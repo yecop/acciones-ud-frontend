@@ -10,12 +10,7 @@ import RadioCard from "../ui/RadioCard.jsx";
  * @param {string} props.value       Id del plan seleccionado.
  * @param {function} props.onChange  Recibe el id seleccionado.
  */
-export default function PlanSelection({
-  title = "Elige tu plan",
-  plans = [],
-  value,
-  onChange,
-}) {
+export default function PlanSelection({ title = "Elige tu plan", plans = [], value, onChange }) {
   return (
     <section className={styles.section}>
       <h2 className={styles.heading}>{title}</h2>

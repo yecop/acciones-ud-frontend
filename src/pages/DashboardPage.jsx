@@ -23,6 +23,7 @@ import { dashboardData } from "../data/dashboardData.js";
  * @param {function} [props.onTrade]   Recibe el símbolo.
  * @param {function} [props.onNavigate]
  * @param {function} [props.onOrdenCreada] Se llama con la orden creada (para refrescar el panel).
+ * @param {function} [props.onNotifications] Abre el centro de notificaciones.
  * @param {function} [props.onLogout]
  */
 export default function DashboardPage({
@@ -32,11 +33,18 @@ export default function DashboardPage({
   onTrade,
   onNavigate,
   onOrdenCreada,
+  onNotifications,
   onLogout,
 }) {
   return (
     <div className={styles.page}>
-      <TopNav items={data.nav} user={data.user} onNavigate={onNavigate} onLogout={onLogout} />
+      <TopNav
+        items={data.nav}
+        user={data.user}
+        onNavigate={onNavigate}
+        onNotifications={onNotifications}
+        onLogout={onLogout}
+      />
 
       <main className={styles.main}>
         <div className={styles.greetingRow}>

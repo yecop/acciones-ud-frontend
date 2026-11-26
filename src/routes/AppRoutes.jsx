@@ -10,6 +10,7 @@ import ProfilePage from "../pages/ProfilePage.jsx";
 import PortafolioView from "../pages/PortafolioView.jsx";
 import AccionesPage from "../pages/AccionesPage.jsx";
 import OrdenDetallePage from "../pages/OrdenDetallePage.jsx";
+import NotificacionesPage from "../pages/NotificacionesPage.jsx";
 import OrdenesPage from "../pages/OrdenesPage.jsx";
 import HistorialOrdenesPage from "../pages/HistorialOrdenesPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -17,6 +18,7 @@ import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
 import { dashboardData } from "../data/dashboardData.js";
 import { useResumenPanel } from "../hooks/useResumenPanel.js";
 import { construirDatosPanel } from "../pages/panelDatos.js";
+import { NotificacionesProvider, useNoLeidas } from "../notificaciones/NotificacionesContext.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { RUTA_INICIAL_POR_ROL, RUTAS, RUTAS_PROTEGIDAS, rutaDeNavegacion } from "./routesConfig.js";
 
@@ -42,8 +44,9 @@ function RutaPanel() {
   const { usuario, rol, cerrarSesion } = useAuth();
   const navigate = useNavigate();
   const resumen = useResumenPanel();
+  const { noLeidas } = useNoLeidas();
 
-  const datos = useMemo(
+  const datosBase = useMemo(
     () =>
       construirDatosPanel({
         base: dashboardData,
@@ -56,6 +59,9 @@ function RutaPanel() {
     [usuario, rol, resumen.saldo, resumen.dashboard, resumen.estadoMercado]
   );
 
+  // La campana cuenta notificaciones sin leer (no las alertas del resumen).
+  const datos = { ...datosBase, user: { ...datosBase.user, notifications: noLeidas } };
+
   return (
     <DashboardPage
       data={datos}
@@ -65,6 +71,7 @@ function RutaPanel() {
         navigate(ticker ? `/operar?ticker=${encodeURIComponent(ticker)}` : "/operar")
       }
       onNavigate={(id) => navigate(rutaDeNavegacion(id))}
+      onNotifications={() => navigate("/notificaciones")}
       onOrdenCreada={resumen.refrescar}
       onLogout={async () => {
         await cerrarSesion();
@@ -96,58 +103,63 @@ function PaginaPendiente({ ruta }) {
 /** Todas las rutas de la aplicación. Se monta dentro de un Router y de <AuthProvider>. */
 export default function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<Inicio />} />
+    <NotificacionesProvider>
+      <Routes>
+        <Route path="/" element={<Inicio />} />
 
-      {/* Públicas */}
-      <Route path={RUTAS.ingreso} element={<LoginPage />} />
-      <Route path={RUTAS.verificacion} element={<MfaPage />} />
-      <Route path={RUTAS.registro} element={<RegistrationPage />} />
-      <Route
-        path={RUTAS.sinAcceso}
-        element={
-          <StatusPage
-            etiqueta="403"
-            titulo="No tienes acceso a esta sección"
-            mensaje="Tu rol no permite ver esta pantalla. Si crees que es un error, contacta a soporte."
-            accion={{ to: "/", label: "Volver al inicio" }}
-          />
-        }
-      />
+        {/* Públicas */}
+        <Route path={RUTAS.ingreso} element={<LoginPage />} />
+        <Route path={RUTAS.verificacion} element={<MfaPage />} />
+        <Route path={RUTAS.registro} element={<RegistrationPage />} />
+        <Route
+          path={RUTAS.sinAcceso}
+          element={
+            <StatusPage
+              etiqueta="403"
+              titulo="No tienes acceso a esta sección"
+              mensaje="Tu rol no permite ver esta pantalla. Si crees que es un error, contacta a soporte."
+              accion={{ to: "/", label: "Volver al inicio" }}
+            />
+          }
+        />
 
-      {/* Panel (diseño propio con barra superior) */}
-      <Route element={<ProtectedRoute roles={[ROLES.INV]} />}>
-        <Route path="/panel" element={<RutaPanel />} />
-      </Route>
+        {/* Panel (diseño propio con barra superior) */}
+        <Route element={<ProtectedRoute roles={[ROLES.INV]} />}>
+          <Route path="/panel" element={<RutaPanel />} />
+        </Route>
 
-      {/* Resto de rutas protegidas, dentro del marco común */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppShell />}>
-          {RUTAS_PROTEGIDAS.filter((r) => r.id !== "panel").map((ruta) => (
-            <Route key={ruta.id} element={<ProtectedRoute roles={ruta.roles} />}>
-              <Route
-                path={ruta.path}
-                element={PANTALLAS[ruta.id] ?? <PaginaPendiente ruta={ruta} />}
-              />
+        {/* Resto de rutas protegidas, dentro del marco común */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppShell />}>
+            {RUTAS_PROTEGIDAS.filter((r) => r.id !== "panel").map((ruta) => (
+              <Route key={ruta.id} element={<ProtectedRoute roles={ruta.roles} />}>
+                <Route
+                  path={ruta.path}
+                  element={PANTALLAS[ruta.id] ?? <PaginaPendiente ruta={ruta} />}
+                />
+              </Route>
+            ))}
+            <Route element={<ProtectedRoute roles={[ROLES.INV, ROLES.COM]} />}>
+              <Route path="/notificaciones" element={<NotificacionesPage />} />
             </Route>
-          ))}
-          <Route element={<ProtectedRoute roles={[ROLES.INV]} />}>
-            <Route path="/historial/:id" element={<OrdenDetallePage />} />
+            <Route element={<ProtectedRoute roles={[ROLES.INV]} />}>
+              <Route path="/historial/:id" element={<OrdenDetallePage />} />
+            </Route>
           </Route>
         </Route>
-      </Route>
 
-      <Route
-        path="*"
-        element={
-          <StatusPage
-            etiqueta="404"
-            titulo="Página no encontrada"
-            mensaje="La dirección no existe o fue movida."
-            accion={{ to: "/", label: "Volver al inicio" }}
-          />
-        }
-      />
-    </Routes>
+        <Route
+          path="*"
+          element={
+            <StatusPage
+              etiqueta="404"
+              titulo="Página no encontrada"
+              mensaje="La dirección no existe o fue movida."
+              accion={{ to: "/", label: "Volver al inicio" }}
+            />
+          }
+        />
+      </Routes>
+    </NotificacionesProvider>
   );
 }
