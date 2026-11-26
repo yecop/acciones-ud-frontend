@@ -13,9 +13,16 @@ import { useSimulacionOrden } from "../../hooks/useSimulacionOrden.js";
  * @param {object} props.asset            { symbol, name, currentPrice }.
  * @param {number} props.saldoDisponible
  * @param {boolean} [props.isMarketOpen]  Estado conocido del mercado; la simulación lo corrige.
+ * @param {{zonaHoraria?:string, proximaApertura?:string|null}|null} [props.mercado] Estado del mercado de la acción.
  * @param {function} [props.onCreada]     Se llama con la orden creada (p. ej. para refrescar saldo y lista).
  */
-export default function NuevaOrden({ asset, saldoDisponible, isMarketOpen = true, onCreada }) {
+export default function NuevaOrden({
+  asset,
+  saldoDisponible,
+  isMarketOpen = true,
+  mercado = null,
+  onCreada,
+}) {
   const [borrador, setBorrador] = useState(null);
   const solicitud = useMemo(
     () => (borradorValido(borrador) ? construirSolicitud(borrador) : null),
@@ -41,6 +48,7 @@ export default function NuevaOrden({ asset, saldoDisponible, isMarketOpen = true
       asset={asset}
       saldoDisponible={saldoDisponible}
       isMarketOpen={mercadoAbierto}
+      mercado={mercado}
       simulacion={simulacion}
       envio={estado}
       acciones={acciones}

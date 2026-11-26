@@ -64,12 +64,7 @@ export function PlusIcon({ size = 18 }) {
 export function AlertIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        d="M10 2l8 15H2l8-15z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
+      <path d="M10 2l8 15H2l8-15z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       <path d="M10 8v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
       <circle cx="10" cy="14.5" r="1" fill="currentColor" />
     </svg>
@@ -80,7 +75,13 @@ export function ClockIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M10 5.5V10l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M10 5.5V10l3 2"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

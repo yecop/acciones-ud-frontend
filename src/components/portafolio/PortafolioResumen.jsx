@@ -17,19 +17,26 @@ export default function PortafolioResumen({ resumen, loading = false, error = nu
   return (
     <section className={styles.card} aria-labelledby="resumen-titulo">
       <div className={styles.header}>
-        <h2 id="resumen-titulo" className={styles.title}>Resumen del portafolio</h2>
+        <h2 id="resumen-titulo" className={styles.title}>
+          Resumen del portafolio
+        </h2>
         {resumen && (
           <span className={styles.badge}>
-            {resumen.numeroPosiciones}{" "}
-            {resumen.numeroPosiciones === 1 ? "posición" : "posiciones"}
+            {resumen.numeroPosiciones} {resumen.numeroPosiciones === 1 ? "posición" : "posiciones"}
           </span>
         )}
       </div>
 
-      {loading && <p className={styles.state} role="status">Cargando resumen…</p>}
+      {loading && (
+        <p className={styles.state} role="status">
+          Cargando resumen…
+        </p>
+      )}
 
       {!loading && error && (
-        <p className={styles.error} role="alert">{error}</p>
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
       )}
 
       {!loading && !error && resumen && (

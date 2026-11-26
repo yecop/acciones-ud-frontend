@@ -2,7 +2,12 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import styles from "./OrdenDetallePage.module.css";
 import BotonCancelarOrden from "../components/order/BotonCancelarOrden.jsx";
-import { etiquetaEstado, etiquetaLado, etiquetaTipo } from "../components/order/estadosOrden.js";
+import {
+  ayudaEstado,
+  etiquetaEstado,
+  etiquetaLado,
+  etiquetaTipo,
+} from "../components/order/estadosOrden.js";
 import { formatCurrency } from "../components/order/orderUtils.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useOrdenDetalle } from "../hooks/useOrdenDetalle.js";
@@ -77,6 +82,7 @@ export default function OrdenDetallePage() {
   }
 
   const estado = etiquetaEstado(orden);
+  const ayuda = ayudaEstado(orden);
   const ejecutada = Number(orden.cantidadEjecutada ?? 0);
   const comisionista = Number(orden.comision?.valorComisionista ?? 0);
   const esCompra = orden.lado === "COMPRA";
@@ -112,6 +118,16 @@ export default function OrdenDetallePage() {
         >
           {mensaje.texto}
         </p>
+      )}
+
+      {ayuda && (
+        <aside
+          className={`${styles.ayuda} ${ayuda.tono === "negativo" ? styles.ayudaNegativa : ""}`}
+          aria-label="Qué significa este estado"
+        >
+          <p className={styles.ayudaTitulo}>{ayuda.corta}</p>
+          <p className={styles.texto}>{ayuda.detalle}</p>
+        </aside>
       )}
 
       <section className={styles.card} aria-labelledby="titulo-resumen">

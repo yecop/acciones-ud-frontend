@@ -67,7 +67,10 @@
   color: var(--color-text);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .sideBuyActive {
@@ -101,7 +104,9 @@
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 0 var(--space-4);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .inputWrap:focus-within {
@@ -183,4 +188,31 @@
 
 .submitQueue:hover:not(:disabled) {
   background: #a86f00;
+}
+
+.aviso {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+}
+
+.colaAviso {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px dashed var(--color-warning);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.bloqueo {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--color-negative);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
 }

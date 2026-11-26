@@ -12,12 +12,20 @@ import { formatCurrency } from "./portafolioUtils.js";
 export default function SaldoWidget({ saldo, loading = false, error = null }) {
   return (
     <section className={styles.card} aria-labelledby="saldo-titulo">
-      <h2 id="saldo-titulo" className={styles.title}>Mi dinero</h2>
+      <h2 id="saldo-titulo" className={styles.title}>
+        Mi dinero
+      </h2>
 
-      {loading && <p className={styles.state} role="status">Cargando saldo…</p>}
+      {loading && (
+        <p className={styles.state} role="status">
+          Cargando saldo…
+        </p>
+      )}
 
       {!loading && error && (
-        <p className={styles.error} role="alert">{error}</p>
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
       )}
 
       {!loading && !error && saldo && (

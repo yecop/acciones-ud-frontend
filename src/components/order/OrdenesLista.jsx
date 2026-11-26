@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./OrdenesLista.module.css";
 import BotonCancelarOrden from "./BotonCancelarOrden.jsx";
-import { etiquetaEstado, etiquetaLado, etiquetaTipo } from "./estadosOrden.js";
+import { ayudaEstado, etiquetaEstado, etiquetaLado, etiquetaTipo } from "./estadosOrden.js";
 import { formatCurrency } from "./orderUtils.js";
 
 const formatoFecha = new Intl.DateTimeFormat("es-CO", { dateStyle: "short" });
@@ -103,6 +103,7 @@ export default function OrdenesLista({
             <tbody>
               {ordenes.map((orden) => {
                 const estado = etiquetaEstado(orden);
+                const ayuda = ayudaEstado(orden);
                 const ejecutada = Number(orden.cantidadEjecutada ?? 0);
                 return (
                   <tr key={orden.id} data-orden-id={orden.id}>
@@ -128,6 +129,7 @@ export default function OrdenesLista({
                       <span className={`${styles.chip} ${styles[estado.tono]}`}>
                         {estado.etiqueta}
                       </span>
+                      {ayuda && <span className={styles.ayudaEstado}>{ayuda.corta}</span>}
                     </td>
                     <td className={styles.acciones}>
                       {detalleHref && (

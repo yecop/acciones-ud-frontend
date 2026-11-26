@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { avisoPrecio, bloqueoPrecio, GUIA_TIPO, textoDiferencia } from "./guiaPrecio.js";
+import { textoMomento } from "./horaMercado.js";
 import styles from "./OrderForm.module.css";
 
 import OrderTypeSelector from "./OrderTypeSelector.jsx";
@@ -41,6 +43,7 @@ export default function OrderForm({
   asset = { symbol: "AAPL", name: "Apple Inc.", currentPrice: 176.5 },
   saldoDisponible = 0,
   isMarketOpen = true,
+  mercado = null,
   defaultType = "market",
   onSubmit,
   onDraftChange,
@@ -77,7 +80,11 @@ export default function OrderForm({
   const insufficientFunds = isBuy && total > saldoDisponible;
   // En ventas solo el backend sabe cuántas acciones hay: `fondosSuficientes` es false si faltan.
   const insufficientShares = !isBuy && simulacion?.fondosSuficientes === false;
-  const canSubmit = hasValidQuantity && hasValidPrice && !insufficientFunds && !insufficientShares;
+  const bloqueo = requiresPrice
+    ? bloqueoPrecio({ type: orderType, side, price: effectivePrice, current: asset.currentPrice })
+    : null;
+  const canSubmit =
+    hasValidQuantity && hasValidPrice && !insufficientFunds && !insufficientShares && !bloqueo;
 
   const enviando = envio.fase === "enviando";
   const bloqueado = envio.fase !== "idle" && envio.fase !== "error";
@@ -92,6 +99,15 @@ export default function OrderForm({
       price: effectivePrice,
     });
   }, [onDraftChange, asset.symbol, side, orderType, cantidadEntera, effectivePrice]);
+
+  const proximaApertura = mercado?.proximaApertura
+    ? textoMomento(mercado.proximaApertura, mercado.zonaHoraria)
+    : null;
+  const guia = GUIA_TIPO[orderType];
+  const diferencia = requiresPrice ? textoDiferencia(effectivePrice, asset.currentPrice) : null;
+  const aviso = requiresPrice
+    ? avisoPrecio({ type: orderType, side, price: effectivePrice, current: asset.currentPrice })
+    : null;
 
   const submitLabel = enviando ? "Enviando…" : isMarketOpen ? "Ejecutar Orden" : "Encolar Orden";
 
@@ -204,7 +220,7 @@ export default function OrderForm({
       {requiresPrice ? (
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="order-price">
-            Precio
+            {guia?.etiqueta ?? "Precio"}
           </label>
           <div className={styles.inputWrap}>
             <span className={styles.prefix}>USD</span>
@@ -216,16 +232,46 @@ export default function OrderForm({
               placeholder="0.00"
               value={price}
               disabled={bloqueado}
+              aria-invalid={bloqueo ? true : undefined}
+              aria-describedby={bloqueo ? "order-price-bloqueo" : undefined}
               onChange={handlePriceChange}
             />
           </div>
-          <span className={styles.hint}>Precio límite por acción.</span>
+          <span className={styles.hint}>{guia?.ayuda}</span>
+          <span className={styles.hint}>
+            Precio actual {formatCurrency(asset.currentPrice)}
+            {diferencia && ` · ${diferencia}`}
+          </span>
+          {bloqueo && (
+            <p id="order-price-bloqueo" className={styles.bloqueo} role="alert">
+              {bloqueo}
+            </p>
+          )}
+          {!bloqueo && aviso && (
+            <p className={styles.aviso} role="status">
+              {aviso}
+            </p>
+          )}
         </div>
       ) : (
         <div className={styles.marketPrice}>
           <span className={styles.marketPriceLabel}>Precio de mercado (actual)</span>
           <span className={styles.marketPriceValue}>{formatCurrency(asset.currentPrice)}</span>
         </div>
+      )}
+
+      {!isMarketOpen && (
+        <p className={styles.colaAviso} role="note">
+          El mercado está cerrado. La orden quedará <strong>encolada</strong> y se enviará en la
+          próxima apertura; mientras siga pendiente la puedes cancelar y se libera el saldo
+          reservado.
+          {proximaApertura && (
+            <>
+              {" "}
+              <strong>Próxima apertura:</strong> {proximaApertura}.
+            </>
+          )}
+        </p>
       )}
 
       <OrderSummary
@@ -249,7 +295,7 @@ export default function OrderForm({
           {submitLabel}
         </button>
       ) : (
-        <OrderFlowPanel envio={envio} acciones={acciones} onNueva={handleNueva} />
+        <OrderFlowPanel envio={envio} acciones={acciones} mercado={mercado} onNueva={handleNueva} />
       )}
     </section>
   );

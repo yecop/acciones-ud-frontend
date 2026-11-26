@@ -184,3 +184,12 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+.ayudaEstado {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: normal;
+  max-width: 190px;
+}
