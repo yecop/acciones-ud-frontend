@@ -10,9 +10,11 @@ import ThemeSwitcher from "../../theme/ThemeSwitcher.jsx";
  * @param {Array<{id:string,label:string,active?:boolean}>} props.items
  * @param {object} props.user   { name, initials, role, notifications }
  * @param {function} [props.onNavigate] Recibe el id del item.
+ * @param {function} [props.onNotifications] Abre el centro de notificaciones (campana).
  * @param {function} [props.onLogout]   Si se pasa, muestra el botón "Salir".
  */
-export default function TopNav({ items = [], user = {}, onNavigate, onLogout }) {
+export default function TopNav({ items = [], user = {}, onNavigate, onLogout, onNotifications }) {
+  const sinLeer = user.notifications ?? 0;
   return (
     <nav className={styles.nav} aria-label="Navegación principal">
       <div className={styles.brand}>
@@ -36,9 +38,14 @@ export default function TopNav({ items = [], user = {}, onNavigate, onLogout }) 
 
       <div className={styles.right}>
         <ThemeSwitcher />
-        <button type="button" className={styles.bell} aria-label="Notificaciones">
+        <button
+          type="button"
+          className={styles.bell}
+          aria-label={sinLeer > 0 ? `Notificaciones, ${sinLeer} sin leer` : "Notificaciones"}
+          onClick={onNotifications}
+        >
           <BellIcon />
-          {user.notifications > 0 && <span className={styles.badge}>{user.notifications}</span>}
+          {sinLeer > 0 && <span className={styles.badge}>{sinLeer > 99 ? "99+" : sinLeer}</span>}
         </button>
         <div className={styles.user}>
           <span className={styles.avatar}>{user.initials}</span>

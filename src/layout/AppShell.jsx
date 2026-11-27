@@ -3,6 +3,7 @@ import TopNav from "../components/dashboard/TopNav.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL } from "../auth/roles.js";
 import { RUTAS, rutaDeNavegacion, rutasDelRol } from "../routes/routesConfig.js";
+import { useNoLeidas } from "../notificaciones/NotificacionesContext.jsx";
 import styles from "./AppShell.module.css";
 
 function iniciales(nombre = "") {
@@ -24,6 +25,7 @@ export default function AppShell() {
   const { usuario, rol, cerrarSesion } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { noLeidas } = useNoLeidas();
 
   const items = rutasDelRol(rol).map((r) => ({
     id: r.id,
@@ -44,9 +46,10 @@ export default function AppShell() {
           name: usuario?.nombre,
           initials: iniciales(usuario?.nombre),
           role: ETIQUETA_ROL[rol],
-          notifications: 0,
+          notifications: noLeidas,
         }}
         onNavigate={(id) => navigate(rutaDeNavegacion(id))}
+        onNotifications={() => navigate("/notificaciones")}
         onLogout={salir}
       />
       <main className={styles.main}>

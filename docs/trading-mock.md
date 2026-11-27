@@ -84,6 +84,14 @@ Estados de pantalla: `laura@correo.com` tiene 4 (2 sin leer); `nuevo@correo.com`
 3. ¿Hay "marcar todas como leídas"? ¿Y cuánto tiempo se conservan?
 4. Los tipos para propuestas y alertas, ¿cuáles serán y cuándo?
 
+## Centro de notificaciones (SCRUM-63)
+
+- Campana de la barra (panel y resto de pantallas, roles INV y COM): cuenta las no leídas con `GET /notificaciones?leida=false&tamano=1` y usa `totalElementos`. Se refresca cada 30 s y al marcar algo como leído; con la pestaña oculta (`document.visibilityState === "hidden"`) no consulta y al volver refresca una vez (`useSondeoVisible`, también usado por la lista). Si la consulta falla conserva el último número.
+- `/notificaciones`: vistas «Todas» / «Sin leer», filtro por tipo, paginación de 10 (filtros y página en la URL), «Marcar como leída» por notificación y «Marcar esta página como leída».
+- **[Confirmado por backend]** El filtro `leida` existirá tal como se usa (`?leida=false&tamano=1` → `totalElementos`). También habrá `PATCH /notificaciones/leidas` para marcar todas; aún no se usa («Marcar esta página como leída» sigue haciendo un PATCH por notificación).
+- ⚠ No hay «marcar todas»: «Marcar esta página» hace un `PATCH` por notificación en paralelo; si alguna falla se avisa cuántas.
+- Las notificaciones `ORDEN_*` con `referenciaId` enlazan al detalle de la orden (solo inversionista). Un tipo desconocido se muestra con su nombre legible.
+
 ## Órdenes avanzadas y encolamiento (SCRUM-64)
 
 - El campo de precio cambia según el tipo: «Precio límite» (Limit), «Precio stop» (Stop Loss) y «Precio objetivo» (Take Profit), cada uno con su ayuda, el precio actual y cuánto se aleja el precio escrito (en %).
