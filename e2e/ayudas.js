@@ -26,3 +26,17 @@ export async function iniciarSesion(page, correo = "laura@correo.com") {
   await enviarCodigo(page);
   await expect(page.getByRole("button", { name: /salir/i })).toBeVisible();
 }
+
+export async function abrirMenu(page) {
+  const nav = page.getByRole("navigation", { name: "Navegación principal" });
+  const control = nav.getByRole("button", { name: "Menú de navegación" });
+  if ((await control.isVisible()) && (await control.getAttribute("aria-expanded")) === "false") {
+    await control.click();
+  }
+  return nav;
+}
+
+export async function irASeccion(page, nombre) {
+  const nav = await abrirMenu(page);
+  await nav.getByRole("button", { name: nombre, exact: true }).click();
+}

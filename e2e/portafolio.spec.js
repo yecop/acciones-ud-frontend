@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { iniciarSesion } from "./ayudas.js";
+import { iniciarSesion, irASeccion } from "./ayudas.js";
 
 test.describe("portafolio", () => {
   test("preferencias no implementadas: muestra saldo y posiciones en Tabla con aviso", async ({
@@ -51,7 +51,7 @@ test.describe("portafolio", () => {
 test.describe("perfil", () => {
   test("la persona llega al perfil desde el menú", async ({ page }) => {
     await iniciarSesion(page, "laura@correo.com");
-    await page.goto("/#/perfil");
+    await irASeccion(page, "Perfil");
 
     await expect(page.getByRole("heading", { name: /perfil y preferencias/i })).toBeVisible();
   });

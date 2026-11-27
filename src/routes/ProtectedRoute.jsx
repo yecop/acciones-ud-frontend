@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useOutletContext } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { RUTAS } from "./routesConfig.js";
 
@@ -13,6 +13,7 @@ import { RUTAS } from "./routesConfig.js";
 export default function ProtectedRoute({ roles }) {
   const { autenticado, rol } = useAuth();
   const ubicacion = useLocation();
+  const contexto = useOutletContext();
 
   if (!autenticado) {
     return <Navigate to={RUTAS.ingreso} replace state={{ desde: ubicacion.pathname }} />;
@@ -20,5 +21,5 @@ export default function ProtectedRoute({ roles }) {
   if (roles && !roles.includes(rol)) {
     return <Navigate to={RUTAS.sinAcceso} replace />;
   }
-  return <Outlet />;
+  return <Outlet context={contexto} />;
 }

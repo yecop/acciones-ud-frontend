@@ -1,6 +1,5 @@
 import styles from "./Header.module.css";
 import Logo from "../marca/Logo.jsx";
-import ThemeSwitcher from "../../theme/ThemeSwitcher.jsx";
 
 /**
  * Cabecera global con marca y acceso a cuenta.
@@ -21,7 +20,6 @@ export default function Header({
         <Logo alto={40} />
       </div>
       <div className={styles.actions}>
-        <ThemeSwitcher />
         <p className={styles.account}>
           {accountText}{" "}
           <a href={loginHref} className={styles.loginLink}>

@@ -123,7 +123,7 @@ Ver [docs/saldo-portafolio.md](docs/saldo-portafolio.md) para escenarios, API y 
 ## Perfil y preferencias (SCRUM-29)
 
 En `#/perfil`, los usuarios autenticados pueden editar nombre y celular. El inversionista
-puede guardar canales de notificación, vista del portafolio, tema, tipo de orden (trailing stop
+puede guardar canales de notificación, vista del portafolio, tipo de orden (trailing stop
 deshabilitado), límite diario, doble autorización, umbral de orden grande y reporte mensual.
 Los errores se muestran por campo; los datos básicos y las preferencias se guardan por separado.
 El mock conserva la configuración al recargar la pestaña. Ver [docs/perfil-preferencias.md](docs/perfil-preferencias.md)
@@ -262,26 +262,13 @@ src/
 ├─ pages/        # Dashboard, Login, Verification, InvestmentProfile, StatusPage
 ├─ components/   # layout, sections, dashboard, order, verification, ui
 ├─ data/         # datos de ejemplo del panel y catálogos
-├─ theme/        # ThemeContext, ThemeSwitcher
 └─ styles/       # tokens.css, themes.css, global.css
 ```
 
-## Temas de color (3 paletas, sin azules)
+## Paleta de color
 
-Paletas intercambiables en tiempo real con el selector «Tema: …»:
-
-1. **Esmeralda Tradicional** (por defecto)
-2. **Verde Neón**
-3. **Verde Bosque**
-
-- `styles/themes.css` — cada paleta redefine las mismas variables bajo `[data-theme="..."]`.
-- `theme/ThemeContext.jsx` — aplica `data-theme` en `<html>` y persiste la elección.
-- `theme/ThemeSwitcher.jsx` — selector con vista previa.
-
-Los componentes no usan colores fijos: consumen variables CSS (`--color-brand`, `--color-surface`,
-etc.). El cliente pidió un diseño más moderno **sin azul**, por eso se retiró «Azul Cobalto» y los
-neutros pasaron de tonos azulados a tonos cálidos. Para añadir una paleta, agrega un bloque
-`[data-theme="..."]` en `themes.css` y una entrada en `THEMES`.
+La aplicación usa Esmeralda Tradicional. Los componentes consumen las variables CSS de
+`styles/themes.css`, como `--color-brand` y `--color-surface`.
 
 ## Creación de órdenes (trading)
 

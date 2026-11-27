@@ -29,3 +29,9 @@ En SCRUM-67, abre **Portafolio y órdenes → Depósitos y retiros** desde una c
 | `gestionApi.js` | GET /reportes y /reportes/dashboard                                                                                           | Reportes de ejemplo por rol. El dashboard empresarial requiere Junta Directiva. Un periodo anterior a la fecha de los datos demo devuelve una lista vacía. Fechas inválidas devuelven 400.                               |
 
 Las suscripciones y listas de seguimiento demo se guardan por cuenta en la sesión de la pestaña. Fondos, administración y auditoría mantienen sus cambios en memoria. Los registros de roles y restricciones sirven para probar formularios. Su aplicación a la autenticación y a la ejecución de órdenes corresponde a los servicios que implementarán esas reglas. La confirmación de rutas y campos pendientes queda para SCRUM-42, 47 a 50, 54 y 55.
+
+## Pantalla Premium · SCRUM-66
+
+Inicia sesión como inversionista en modo mock y abre **Premium** en la navegación o entra a `/#/premium`. Elige un plan y una de las tarjetas de prueba para simular aprobación o rechazo. Después de activar la suscripción, prueba agregar `AAPL` a la watchlist y crear una alerta con un precio objetivo positivo. Puedes eliminar y reactivar ambos registros. Al cancelar la suscripción, el acceso queda restringido y puedes elegir un plan de nuevo.
+
+En modo API, el checkout espera que el servidor devuelva `urlPago` de Stripe Checkout y consulta el estado de la suscripción al regresar. Esta forma de integración queda pendiente de confirmar y probar con SCRUM-54 y SCRUM-55. La simulación utiliza tarjetas predefinidas y omite la captura de datos de tarjeta.

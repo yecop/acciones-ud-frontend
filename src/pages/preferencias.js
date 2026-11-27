@@ -7,11 +7,6 @@ export const TIPOS_ORDEN = {
 };
 export const VISTAS_PORTAFOLIO = { TABLA: "Tabla", TARJETAS: "Tarjetas" };
 export const CANALES = { EMAIL: "Correo electrónico", SMS: "SMS", WHATSAPP: "WhatsApp" };
-export const TEMAS = {
-  esmeralda: "Esmeralda Tradicional",
-  neon: "Verde Neón",
-  bosque: "Verde Bosque",
-};
 
 /** Conserva los campos desconocidos: PUT reemplaza el documento completo. */
 export function completarPreferencias(p = {}) {
@@ -50,7 +45,6 @@ export function validarPreferencias(p) {
     p.notificaciones.canales.some((c) => !CANALES[c])
   )
     e["notificaciones.canales"] = "Selecciona al menos un canal de notificación válido.";
-  if (!TEMAS[p.visualizacion.tema]) e["visualizacion.tema"] = "Selecciona un tema disponible.";
   if (!VISTAS_PORTAFOLIO[p.visualizacion.portafolio])
     e["visualizacion.portafolio"] = "Selecciona una vista disponible.";
   if (!TIPOS_ORDEN[p.operaciones.tipoOrdenPorDefecto])

@@ -88,10 +88,3 @@
     margin: var(--space-7) 0;
   }
 }
-
-/* En pantallas angostas el selector de tema flota arriba: deja espacio para que no tape el logo. */
-@media (max-width: 900px) {
-  .brand {
-    margin-top: 52px;
-  }
-}
