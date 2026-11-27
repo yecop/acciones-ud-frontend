@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
-import { ThemeProvider } from "./theme/ThemeContext.jsx";
 import "./styles/global.css";
 
 async function arrancar() {
@@ -14,9 +13,7 @@ async function arrancar() {
 
   ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
-      <ThemeProvider>
-        <App />
-      </ThemeProvider>
+      <App />
     </React.StrictMode>
   );
 }

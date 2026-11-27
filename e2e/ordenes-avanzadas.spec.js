@@ -1,13 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { iniciarSesion } from "./ayudas.js";
+import { iniciarSesion, irASeccion } from "./ayudas.js";
 
 async function abrirOperar(page, { mercadoAbierto }) {
   await iniciarSesion(page, "laura@correo.com");
   await page.evaluate((abierto) => window.__mock.ordenes.mercado(abierto), mercadoAbierto);
-  await page
-    .getByRole("button", { name: /^operar$/i })
-    .first()
-    .click();
+  await irASeccion(page, "Operar");
   await expect(page.getByRole("heading", { name: "Operar" })).toBeVisible();
 }
 
@@ -39,10 +36,7 @@ test.describe("órdenes avanzadas y encolamiento", () => {
 
   test("una orden en revisión o detenida explica qué se puede hacer", async ({ page }) => {
     await iniciarSesion(page, "laura@correo.com");
-    await page
-      .getByRole("button", { name: /^historial$/i })
-      .first()
-      .click();
+    await irASeccion(page, "Historial");
 
     await page
       .getByRole("link", { name: /ver detalle de la orden de aapl/i })
@@ -56,10 +50,9 @@ test.describe("órdenes avanzadas y encolamiento", () => {
     const filtros = page.getByRole("form", { name: "Filtros de órdenes" });
     await filtros.getByRole("combobox", { name: "Estado", exact: true }).selectOption("DETENIDA");
     await filtros.getByRole("button", { name: "Aplicar" }).click();
-    await page
-      .getByRole("link", { name: /ver detalle de la orden de/i })
-      .first()
-      .click();
+    const tabla = page.getByRole("region", { name: /tabla de órdenes/i });
+    await expect(tabla.getByRole("row")).toHaveCount(2);
+    await tabla.getByRole("link", { name: /ver detalle de la orden de tsla/i }).click();
     await expect(
       page.getByRole("complementary", { name: /qué significa este estado/i })
     ).toContainText(/no se puede reactivar ni cancelar/i);

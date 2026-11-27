@@ -1,14 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { iniciarSesion } from "./ayudas.js";
+import { iniciarSesion, irASeccion } from "./ayudas.js";
 
 /** Entra, fuerza el mercado abierto (el horario real cambiaría el resultado) y abre «Operar». */
 async function abrirOperar(page) {
   await iniciarSesion(page, "laura@correo.com");
   await page.evaluate(() => window.__mock.ordenes.mercado(true));
-  await page
-    .getByRole("button", { name: /^operar$/i })
-    .first()
-    .click();
+  await irASeccion(page, "Operar");
   await expect(page.getByRole("heading", { name: "Operar" })).toBeVisible();
   await expect(page.getByRole("region", { name: /tabla de órdenes/i })).toBeVisible();
 }
@@ -54,10 +51,7 @@ test.describe("operar: crear y cancelar órdenes", () => {
 
   test("una cuenta sin órdenes ve el estado vacío", async ({ page }) => {
     await iniciarSesion(page, "nuevo@correo.com");
-    await page
-      .getByRole("button", { name: /^operar$/i })
-      .first()
-      .click();
+    await irASeccion(page, "Operar");
     await expect(page.getByText(/todavía no tienes órdenes/i)).toBeVisible();
   });
 });

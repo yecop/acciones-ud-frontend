@@ -40,6 +40,12 @@ export const RUTAS_PROTEGIDAS = [
     roles: [ROLES.INV],
   },
   {
+    id: "premium",
+    path: "/premium",
+    titulo: "Premium",
+    roles: [ROLES.INV],
+  },
+  {
     id: "perfil",
     path: "/perfil",
     titulo: "Perfil",
@@ -90,4 +96,12 @@ export function rutaDeNavegacion(id) {
 
 export function rutasDelRol(rol) {
   return RUTAS_PROTEGIDAS.filter((r) => r.roles.includes(rol));
+}
+
+export function menuDelRol(rol, pathname) {
+  return rutasDelRol(rol).map(({ id, titulo, path }) => ({
+    id,
+    label: titulo,
+    active: pathname === path || pathname.startsWith(`${path}/`),
+  }));
 }

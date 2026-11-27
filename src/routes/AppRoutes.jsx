@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate, useOutletContext } from "react-router-dom";
 import AppShell from "../layout/AppShell.jsx";
 import DashboardPage from "../pages/DashboardPage.jsx";
 import RegistrationPage from "../pages/RegistrationPage.jsx";
@@ -12,13 +12,13 @@ import AccionesPage from "../pages/AccionesPage.jsx";
 import OrdenDetallePage from "../pages/OrdenDetallePage.jsx";
 import OrdenesPage from "../pages/OrdenesPage.jsx";
 import HistorialOrdenesPage from "../pages/HistorialOrdenesPage.jsx";
+import PremiumPage from "../pages/PremiumPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
 import { dashboardData } from "../data/dashboardData.js";
-import { useResumenPanel } from "../hooks/useResumenPanel.js";
 import { construirDatosPanel } from "../pages/panelDatos.js";
 import ProtectedRoute from "./ProtectedRoute.jsx";
-import { RUTA_INICIAL_POR_ROL, RUTAS, RUTAS_PROTEGIDAS, rutaDeNavegacion } from "./routesConfig.js";
+import { RUTA_INICIAL_POR_ROL, RUTAS, RUTAS_PROTEGIDAS } from "./routesConfig.js";
 
 /** "/" lleva a la pantalla inicial del rol, o al ingreso si no hay sesión. */
 function Inicio() {
@@ -39,9 +39,9 @@ function fechaDeHoy() {
 
 /** Panel del inversionista: saldo, portafolio y destacada vienen de la API; el gráfico es de ejemplo. */
 function RutaPanel() {
-  const { usuario, rol, cerrarSesion } = useAuth();
+  const { usuario, rol } = useAuth();
   const navigate = useNavigate();
-  const resumen = useResumenPanel();
+  const resumen = useOutletContext();
 
   const datos = useMemo(
     () =>
@@ -64,23 +64,20 @@ function RutaPanel() {
       onTrade={(ticker) =>
         navigate(ticker ? `/operar?ticker=${encodeURIComponent(ticker)}` : "/operar")
       }
-      onNavigate={(id) => navigate(rutaDeNavegacion(id))}
       onOrdenCreada={resumen.refrescar}
-      onLogout={async () => {
-        await cerrarSesion();
-        navigate(RUTAS.ingreso, { replace: true });
-      }}
     />
   );
 }
 
 /** Pantallas ya construidas dentro del marco común, por id de ruta. */
 const PANTALLAS = {
+  panel: <RutaPanel />,
   perfil: <ProfilePage />,
   portafolio: <PortafolioView />,
   acciones: <AccionesPage />,
   operar: <OrdenesPage />,
   historial: <HistorialOrdenesPage />,
+  premium: <PremiumPage />,
 };
 
 function PaginaPendiente({ ruta }) {
@@ -115,15 +112,10 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Panel (diseño propio con barra superior) */}
-      <Route element={<ProtectedRoute roles={[ROLES.INV]} />}>
-        <Route path="/panel" element={<RutaPanel />} />
-      </Route>
-
-      {/* Resto de rutas protegidas, dentro del marco común */}
+      {/* Rutas protegidas dentro de la misma cabecera */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          {RUTAS_PROTEGIDAS.filter((r) => r.id !== "panel").map((ruta) => (
+          {RUTAS_PROTEGIDAS.map((ruta) => (
             <Route key={ruta.id} element={<ProtectedRoute roles={ruta.roles} />}>
               <Route
                 path={ruta.path}

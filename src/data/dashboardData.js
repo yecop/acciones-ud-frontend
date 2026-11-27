@@ -13,14 +13,6 @@ export const dashboardData = {
     notifications: 3,
   },
 
-  nav: [
-    { id: "panel", label: "Panel", active: true },
-    { id: "operar", label: "Operar" },
-    { id: "historial", label: "Historial" },
-    { id: "portafolio", label: "Portafolio y órdenes" },
-    { id: "perfil", label: "Perfil" },
-  ],
-
   greeting: {
     title: "Buenas tardes, Julian",
     subtitle: "Lunes 2 de noviembre · NYSE y NASDAQ están abiertos",

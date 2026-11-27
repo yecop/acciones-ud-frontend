@@ -5,13 +5,6 @@
   grid-template-columns: 1fr 1fr;
 }
 
-.switcher {
-  position: absolute;
-  top: var(--space-5);
-  right: var(--space-5);
-  z-index: 10;
-}
-
 .hero {
   display: flex;
 }
@@ -37,10 +30,5 @@
      y el formulario queda a la vista sin desplazarse. */
   .hero > * > :not(:first-child) {
     display: none;
-  }
-
-  .switcher {
-    top: var(--space-3);
-    right: var(--space-3);
   }
 }
