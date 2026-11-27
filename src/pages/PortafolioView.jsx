@@ -7,6 +7,7 @@ import PosicionesTable from "../components/portafolio/PosicionesTable.jsx";
 import PosicionesCards from "../components/portafolio/PosicionesCards.jsx";
 import { obtenerSaldo, obtenerResumenPortafolio, listarPosiciones } from "../api/portafolioApi.js";
 import { obtenerPreferencias } from "../api/perfilApi.js";
+import { RUTAS } from "../routes/routesConfig.js";
 
 export default function PortafolioView() {
   const [datos, setDatos] = useState(null);
@@ -60,14 +61,19 @@ export default function PortafolioView() {
           <h1 className={styles.heading}>Mi dinero y mis posiciones</h1>
           <p className={styles.subheading}>Consulta tu saldo y el detalle de cada activo.</p>
         </div>
-        <button
-          type="button"
-          className={styles.refresh}
-          onClick={() => setIntento((i) => i + 1)}
-          disabled={loading}
-        >
-          {loading ? "Actualizando…" : "Actualizar"}
-        </button>
+        <div className={styles.actions}>
+          <Link className={styles.refresh} to={RUTAS.fondos}>
+            Depósitos y retiros
+          </Link>
+          <button
+            type="button"
+            className={styles.refresh}
+            onClick={() => setIntento((i) => i + 1)}
+            disabled={loading}
+          >
+            {loading ? "Actualizando…" : "Actualizar"}
+          </button>
+        </div>
       </div>
       {loading && <p role="status">Cargando saldo y portafolio…</p>}
       {error && (

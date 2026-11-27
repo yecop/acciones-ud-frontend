@@ -8,6 +8,7 @@ import StatusPage from "../pages/StatusPage.jsx";
 import MfaPage from "../pages/MfaPage.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import PortafolioView from "../pages/PortafolioView.jsx";
+import FondosPage from "../pages/FondosPage.jsx";
 import AccionesPage from "../pages/AccionesPage.jsx";
 import OrdenDetallePage from "../pages/OrdenDetallePage.jsx";
 import OrdenesPage from "../pages/OrdenesPage.jsx";
@@ -125,6 +126,7 @@ export default function AppRoutes() {
           ))}
           <Route element={<ProtectedRoute roles={[ROLES.INV]} />}>
             <Route path="/historial/:id" element={<OrdenDetallePage />} />
+            <Route path={RUTAS.fondos} element={<FondosPage />} />
           </Route>
         </Route>
       </Route>
