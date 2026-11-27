@@ -8,7 +8,7 @@ import { obtenerEstadoMercado } from "../api/mercadosApi.js";
  * estado de mercado el formulario asume abierto y el backend confirma al enviar.
  *
  * @param {string|null} ticker
- * @returns {{cargando:boolean, error:string|null, accion:object|null, cotizacion:object|null, mercadoAbierto:boolean|null}}
+ * @returns {{cargando:boolean, error:string|null, accion:object|null, cotizacion:object|null, mercadoAbierto:boolean|null, mercado:object|null}}
  */
 export function useAccionOperable(ticker) {
   const [estado, setEstado] = useState({
@@ -17,6 +17,7 @@ export function useAccionOperable(ticker) {
     accion: null,
     cotizacion: null,
     mercadoAbierto: null,
+    mercado: null,
   });
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export function useAccionOperable(ticker) {
         accion: null,
         cotizacion: null,
         mercadoAbierto: null,
+        mercado: null,
       });
       return undefined;
     }
@@ -38,6 +40,7 @@ export function useAccionOperable(ticker) {
       accion: null,
       cotizacion: null,
       mercadoAbierto: null,
+      mercado: null,
     });
 
     (async () => {
@@ -53,13 +56,16 @@ export function useAccionOperable(ticker) {
           accion: null,
           cotizacion: null,
           mercadoAbierto: null,
+          mercado: null,
         });
         return;
       }
       const accion = accionR.value;
       let mercadoAbierto = null;
+      let mercado = null;
       try {
-        mercadoAbierto = (await obtenerEstadoMercado(accion.mercado, controlador.signal)).abierto;
+        mercado = await obtenerEstadoMercado(accion.mercado, controlador.signal);
+        mercadoAbierto = mercado.abierto;
       } catch {
         /* sin estado: se asume abierto y el backend confirma al enviar */
       }
@@ -73,6 +79,7 @@ export function useAccionOperable(ticker) {
         accion,
         cotizacion: cotizacionR.status === "fulfilled" ? cotizacionR.value : null,
         mercadoAbierto,
+        mercado,
       });
     })();
 

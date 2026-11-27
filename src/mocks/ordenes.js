@@ -237,7 +237,6 @@ export function crearEstadoTrading() {
 export const SALDO_VACIO = { disponible: 0, reservado: 0 };
 
 export function saldoDe(trading, usuario) {
-  if (usuario.cuentaVacia) return { ...SALDO_VACIO };
   return trading.saldos[usuario.id] ?? { ...SALDO_VACIO };
 }
 

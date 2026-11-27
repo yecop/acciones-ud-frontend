@@ -210,3 +210,20 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.ayuda {
+  padding: var(--space-4) var(--space-5);
+  border: 1.5px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.ayudaNegativa {
+  border-color: var(--color-negative);
+}
+
+.ayudaTitulo {
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+}

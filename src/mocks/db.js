@@ -105,6 +105,7 @@ export const db = {
     this.intentosLogin.clear();
     this.contadores.refresh = 0;
     this.trading = crearEstadoTrading();
+    this.gestion = undefined;
     this.persistir();
   },
 

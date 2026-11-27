@@ -92,6 +92,16 @@ Estados de pantalla: `laura@correo.com` tiene 4 (2 sin leer); `nuevo@correo.com`
 - ⚠ No hay «marcar todas»: «Marcar esta página» hace un `PATCH` por notificación en paralelo; si alguna falla se avisa cuántas.
 - Las notificaciones `ORDEN_*` con `referenciaId` enlazan al detalle de la orden (solo inversionista). Un tipo desconocido se muestra con su nombre legible.
 
+## Órdenes avanzadas y encolamiento (SCRUM-64)
+
+- El campo de precio cambia según el tipo: «Precio límite» (Limit), «Precio stop» (Stop Loss) y «Precio objetivo» (Take Profit), cada uno con su ayuda, el precio actual y cuánto se aleja el precio escrito (en %).
+- **Combinaciones que la interfaz no deja enviar** (botón deshabilitado con el motivo): Stop Loss de venta en o sobre el precio actual y Take Profit de venta en o bajo el precio actual, porque se activarían de inmediato. Un límite que se ejecutaría de inmediato solo avisa.
+- ⚠ El contrato no define cuándo se activan Stop Loss y Take Profit ni si aplican a compras; la regla usa la convención habitual del mercado y no bloquea compras. Todo vive en `src/components/order/guiaPrecio.js` para cambiarlo si backend define otra cosa. El backend sigue validando.
+- Con el mercado cerrado el formulario explica el encolamiento y muestra la **próxima apertura** en la hora del mercado (zona `zonaHoraria` de `GET /mercados/{codigo}/estado`) y en la hora de la persona. Antes de enviar se pide confirmar (el flujo ya existía) y la confirmación repite la apertura.
+- Una orden encolada se ve como **«Programada para la apertura»** (lista y detalle).
+- **Qué hacer en cada estado** (`ayudaEstado`, textos [Propuesta]): En revisión (esperar o cancelar), Detenida (no se ejecuta, no se puede reactivar ni cancelar; crear una orden nueva o contactar a soporte). Se muestran en la lista y en el detalle.
+- ⚠ Preguntas para backend: ¿por qué una orden pasa a EN_REVISION y a DETENIDA, quién lo decide y cuánto dura? ¿DETENIDA es definitiva? ¿Las Stop Loss/Take Profit de compra existen?
+
 ## Pendiente en las siguientes partes
 
 Comisionista: clientes, portafolio y órdenes del cliente, propuestas (`PENDIENTE_APROBACION → APROBADA → FIRMADA`, `RECHAZADA` o `VENCIDA`, con una o más órdenes y vencimiento) y la orden de un COM con `clienteId`.

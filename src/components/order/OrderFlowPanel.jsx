@@ -3,11 +3,7 @@ import styles from "./OrderFlowPanel.module.css";
 import { AlertIcon } from "../ui/Icons.jsx";
 import { formatCurrency } from "./orderUtils.js";
 import { etiquetaEstado } from "./estadosOrden.js";
-
-const fechaLarga = (iso) =>
-  new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(iso)
-  );
+import { textoMomento } from "./horaMercado.js";
 
 /**
  * Lo que sigue después de pulsar «Ejecutar/Encolar»: confirmar el encolamiento, pedir el código
@@ -16,12 +12,16 @@ const fechaLarga = (iso) =>
  * @param {object} props
  * @param {object} props.envio     Estado de `useCrearOrden` (`fase`, `orden`, `error`, ...).
  * @param {object} props.acciones  Acciones de `useCrearOrden`.
+ * @param {{zonaHoraria?:string}|null} [props.mercado] Para mostrar la hora en la zona del mercado.
  * @param {function} props.onNueva Limpia el formulario para crear otra orden.
  */
-export default function OrderFlowPanel({ envio, acciones, onNueva }) {
+export default function OrderFlowPanel({ envio, acciones, mercado = null, onNueva }) {
   const [codigo, setCodigo] = useState("");
 
   if (envio.fase === "confirmar") {
+    // La apertura que informó el backend al rechazar; si no vino, la del estado del mercado.
+    const iso = envio.proximaApertura ?? mercado?.proximaApertura ?? null;
+    const apertura = iso ? textoMomento(iso, mercado?.zonaHoraria) : null;
     return (
       <div
         className={`${styles.panel} ${styles.aviso}`}
@@ -34,8 +34,7 @@ export default function OrderFlowPanel({ envio, acciones, onNueva }) {
         <p className={styles.texto}>
           {envio.aviso ?? "El mercado está cerrado."} La orden quedará <strong>pendiente</strong> y
           se enviará cuando abra
-          {envio.proximaApertura ? ` (${fechaLarga(envio.proximaApertura)})` : ""}. Mientras tanto
-          podrás cancelarla.
+          {apertura ? ` (${apertura})` : ""}. Mientras tanto podrás cancelarla.
         </p>
         <div className={styles.botones}>
           <button

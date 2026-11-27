@@ -14,6 +14,7 @@ export function conectarPersistencia(db, storage) {
         if (typeof p.celular === "string") usuario.celular = p.celular;
         if (p.preferencias && typeof p.preferencias === "object")
           usuario.preferencias = p.preferencias;
+        if (p.premium && typeof p.premium === "object") usuario.premium = p.premium;
       }
       const refresh = Array.isArray(guardado.refresh) ? guardado.refresh : [];
       db.tokensRefresh = new Map(
@@ -33,11 +34,12 @@ export function conectarPersistencia(db, storage) {
       storage.setItem(
         CLAVE,
         JSON.stringify({
-          perfiles: db.usuarios.map(({ id, nombre, celular, preferencias }) => ({
+          perfiles: db.usuarios.map(({ id, nombre, celular, preferencias, premium }) => ({
             id,
             nombre,
             celular,
             preferencias,
+            premium,
           })),
           refresh: [...db.tokensRefresh],
         })
