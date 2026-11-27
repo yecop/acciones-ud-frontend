@@ -1,13 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { iniciarSesion } from "./ayudas.js";
+import { iniciarSesion, irASeccion } from "./ayudas.js";
 
 async function abrirHistorial(page) {
   await iniciarSesion(page, "laura@correo.com");
   await page.evaluate(() => window.__mock.ordenes.mercado(true));
-  await page
-    .getByRole("button", { name: /^historial$/i })
-    .first()
-    .click();
+  await irASeccion(page, "Historial");
   await expect(page.getByRole("heading", { name: "Historial de órdenes" })).toBeVisible();
   await expect(page.getByRole("region", { name: /tabla de órdenes/i })).toBeVisible();
 }

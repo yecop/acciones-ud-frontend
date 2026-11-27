@@ -1,9 +1,5 @@
 /**
- * Temas de color de Acciones UD — 3 paletas (sin azules).
- *
- * Cada tema redefine las mismas variables de color que consumen los
- * componentes. El tema activo se selecciona con el atributo `data-theme`
- * en el elemento <html> (ver ThemeContext).
+ * Paleta Esmeralda Tradicional de Acciones UD.
  *
  * Variables de color estándar (contrato compartido por todos los temas):
  *   --color-brand            Color primario (botones, marca)
@@ -29,8 +25,7 @@
  * 1. Esmeralda Tradicional (tema por defecto)
  *    #0A192F · #10B981 · #1E293B · #F8FAFC
  * ============================================================ */
-:root,
-[data-theme="esmeralda"] {
+:root {
   --color-brand: #10b981;
   --color-brand-strong: #0e9f70;
   --color-brand-accent: #10b981;
@@ -51,58 +46,4 @@
   --color-border: #dcdfd6;
   --color-border-strong: #3b4740;
   --color-divider: #e6e9e1;
-}
-
-/* ============================================================
- * 2. Verde Neón
- *    #121212 · #00E676 · #212121 · #F5F6F2
- * ============================================================ */
-[data-theme="neon"] {
-  --color-brand: #00e676;
-  --color-brand-strong: #00c765;
-  --color-brand-accent: #00e676;
-  --color-brand-hero: #121212;
-  --color-brand-hero-deep: #212121;
-  --color-on-brand-muted: #b9f6d5;
-
-  --color-positive: #00c765;
-  --color-negative: #ff5252;
-  --color-chip-soft: #e6faef;
-
-  --color-text: #121212;
-  --color-text-muted: #212121;
-  --color-text-on-brand: #0a0a0a;
-
-  --color-surface: #ffffff;
-  --color-page: #f5f6f2;
-  --color-border: #d7dbdf;
-  --color-border-strong: #212121;
-  --color-divider: #e6e9ec;
-}
-
-/* ============================================================
- * 3. Verde Bosque
- *    #0B4C2C · #FFFFFF · #D1FAE5 · #F5F6F2
- * ============================================================ */
-[data-theme="bosque"] {
-  --color-brand: #0b4c2c;
-  --color-brand-strong: #083a21;
-  --color-brand-accent: #0b4c2c;
-  --color-brand-hero: #0b4c2c;
-  --color-brand-hero-deep: #083a21;
-  --color-on-brand-muted: #d1fae5;
-
-  --color-positive: #0b4c2c;
-  --color-negative: #c0392b;
-  --color-chip-soft: #d1fae5;
-
-  --color-text: #0b2c1c;
-  --color-text-muted: #35564a;
-  --color-text-on-brand: #ffffff;
-
-  --color-surface: #ffffff;
-  --color-page: #f5f6f2;
-  --color-border: #c3dccd;
-  --color-border-strong: #0b4c2c;
-  --color-divider: #dcebe2;
 }

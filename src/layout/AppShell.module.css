@@ -14,7 +14,5 @@
 @media (max-width: 860px) {
   .main {
     padding: var(--space-6) var(--space-4);
-    /* espacio para la barra inferior de navegación */
-    padding-bottom: calc(var(--space-10) + var(--space-8));
   }
 }

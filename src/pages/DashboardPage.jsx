@@ -1,6 +1,5 @@
 import styles from "./DashboardPage.module.css";
 
-import TopNav from "../components/dashboard/TopNav.jsx";
 import KpiCards from "../components/dashboard/KpiCards.jsx";
 import PriceChartCard from "../components/dashboard/PriceChartCard.jsx";
 import PanelMercados from "../components/mercados/PanelMercados.jsx";
@@ -18,73 +17,63 @@ import { dashboardData } from "../data/dashboardData.js";
  *
  * @param {object} props
  * @param {object} [props.data]        Datos del panel.
- * @param {Array<{id:string,label:string,active:boolean}>} [props.menu]
  * @param {{cargando:boolean,error:Error|null,onReintentar:function}} [props.carga] Estado de carga.
  * @param {function} [props.onNewOrder]
  * @param {function} [props.onTrade]   Recibe el símbolo.
- * @param {function} [props.onNavigate]
  * @param {function} [props.onOrdenCreada] Se llama con la orden creada (para refrescar el panel).
- * @param {function} [props.onLogout]
  */
 export default function DashboardPage({
   data = dashboardData,
-  menu,
   carga,
   onNewOrder,
   onTrade,
-  onNavigate,
   onOrdenCreada,
-  onLogout,
 }) {
   return (
-    <div className={styles.page}>
-      <TopNav items={menu} user={data.user} onNavigate={onNavigate} onLogout={onLogout} />
+    <div className={styles.main}>
+      <div className={styles.greetingRow}>
+        <div>
+          <h1 className={styles.greetingTitle}>{data.greeting.title}</h1>
+          <p className={styles.greetingSubtitle}>{data.greeting.subtitle}</p>
+        </div>
+        <button type="button" className={styles.newOrder} onClick={onNewOrder}>
+          <PlusIcon /> Nueva orden
+        </button>
+      </div>
 
-      <main className={styles.main}>
-        <div className={styles.greetingRow}>
-          <div>
-            <h1 className={styles.greetingTitle}>{data.greeting.title}</h1>
-            <p className={styles.greetingSubtitle}>{data.greeting.subtitle}</p>
-          </div>
-          <button type="button" className={styles.newOrder} onClick={onNewOrder}>
-            <PlusIcon /> Nueva orden
+      {carga?.error && (
+        <div className={styles.error} role="alert">
+          <p>No pudimos cargar tu resumen. {carga.error.message}</p>
+          <button type="button" onClick={carga.onReintentar}>
+            Reintentar
           </button>
         </div>
+      )}
 
-        {carga?.error && (
-          <div className={styles.error} role="alert">
-            <p>No pudimos cargar tu resumen. {carga.error.message}</p>
-            <button type="button" onClick={carga.onReintentar}>
-              Reintentar
-            </button>
-          </div>
-        )}
+      <KpiCards items={data.kpis} />
 
-        <KpiCards items={data.kpis} />
-
-        <div className={styles.columns}>
-          <div className={styles.colLeft}>
-            <PriceChartCard asset={data.featured} />
-          </div>
-
-          <div className={styles.colRight}>
-            <NuevaOrden
-              asset={data.trading.asset}
-              saldoDisponible={data.trading.saldoDisponible}
-              isMarketOpen={data.trading.isMarketOpen}
-              onCreada={onOrdenCreada}
-            />
-            <ActivityCard items={data.activity} />
-          </div>
+      <div className={styles.columns}>
+        <div className={styles.colLeft}>
+          <PriceChartCard asset={data.featured} />
         </div>
 
-        <PanelMercados onTrade={onTrade} />
+        <div className={styles.colRight}>
+          <NuevaOrden
+            asset={data.trading.asset}
+            saldoDisponible={data.trading.saldoDisponible}
+            isMarketOpen={data.trading.isMarketOpen}
+            onCreada={onOrdenCreada}
+          />
+          <ActivityCard items={data.activity} />
+        </div>
+      </div>
 
-        <p className={styles.footerNote}>
-          Fondos, portafolio, alertas, la acción destacada y los mercados vienen del API. El trazo
-          del gráfico, sus estadísticas y la actividad son datos de ejemplo.
-        </p>
-      </main>
+      <PanelMercados onTrade={onTrade} />
+
+      <p className={styles.footerNote}>
+        Fondos, portafolio, alertas, la acción destacada y los mercados vienen del API. El trazo del
+        gráfico, sus estadísticas y la actividad son datos de ejemplo.
+      </p>
     </div>
   );
 }

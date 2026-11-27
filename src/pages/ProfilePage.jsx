@@ -2,12 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import Card from "../components/layout/Card.jsx";
 import * as perfilApi from "../api/perfilApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
-import { useTheme } from "../theme/ThemeContext.jsx";
 import {
   CANALES,
   completarPreferencias,
   erroresDelServidor,
-  TEMAS,
   TIPOS_ORDEN,
   validarDatosBasicos,
   validarPreferencias,
@@ -49,7 +47,6 @@ function Resumen({ mensaje, errores }) {
 
 export default function ProfilePage() {
   const { rol, actualizarNombre } = useAuth();
-  const { setTheme } = useTheme();
   const esInversionista = rol === "INV";
   const [perfil, setPerfil] = useState(null);
   const [preferencias, setPreferencias] = useState(null);
@@ -82,8 +79,6 @@ export default function ProfilePage() {
       } else fallos.perfil = p.reason.mensajeUsuario ?? "No pudimos cargar tus datos.";
       if (preferencias.status === "fulfilled" && preferencias.value) {
         setPreferencias(completarPreferencias(preferencias.value));
-        if (TEMAS[preferencias.value.visualizacion?.tema])
-          setTheme(preferencias.value.visualizacion.tema);
       } else if (esInversionista)
         fallos.preferencias =
           preferencias.reason?.mensajeUsuario ?? "No pudimos cargar tus preferencias.";
@@ -93,7 +88,7 @@ export default function ProfilePage() {
     return () => {
       activo = false;
     };
-  }, [esInversionista, intento, actualizarNombre, setTheme]);
+  }, [esInversionista, intento, actualizarNombre]);
 
   function limpiar(seccion) {
     setExito((p) => ({ ...p, [seccion]: "" }));
@@ -134,7 +129,6 @@ export default function ProfilePage() {
         const respuesta = await perfilApi.reemplazarPreferencias(preferencias);
         const actualizado = completarPreferencias(respuesta ?? preferencias);
         setPreferencias(actualizado);
-        setTheme(actualizado.visualizacion.tema);
       }
       setExito((p) => ({
         ...p,
@@ -375,7 +369,6 @@ export default function ProfilePage() {
                         "Vista del portafolio",
                         VISTAS_PORTAFOLIO
                       )}
-                      {selector("visualizacion", "tema", "Tema de color", TEMAS)}
                     </div>
                   </Card>
                   <Card>

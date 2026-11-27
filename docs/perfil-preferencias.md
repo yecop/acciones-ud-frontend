@@ -40,7 +40,7 @@ El mock valida campos de perfil y preferencias y retorna `VALIDACION_FALLIDA` co
 
 1. Ejecutar `npm start`; ingresar con `laura@correo.com` / `Demo1234` y MFA `482913`.
 2. Ir a Perfil; modificar datos básicos y guardarlos. Comprobar el nombre en el encabezado.
-3. Cambiar canales, vista, tema, tipo de orden, límite, autorización, umbral y reporte; guardar preferencias.
+3. Cambiar canales, vista, tipo de orden, límite, autorización, umbral y reporte y guardar las preferencias.
 4. Recargar la página y comprobar que se mantienen los datos y la sesión. Volver al perfil después de navegar a otra sección.
 5. Vaciar el nombre, desmarcar todos los canales o ingresar un monto negativo; verificar foco y errores por campo sin guardado.
 6. Probar fallo de red, errores de validación API y reintento de carga. Para backend real, usar `npm run dev` con `VITE_PROXY_TARGET` configurado y confirmar antes la forma de los campos anteriores.

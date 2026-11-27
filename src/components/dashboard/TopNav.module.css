@@ -33,7 +33,7 @@
   color: var(--color-text);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-pill);
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-semibold);
 }
 
 .link:hover {
@@ -42,7 +42,6 @@
 
 .linkActive {
   background: var(--color-chip-soft);
-  font-weight: var(--font-weight-bold);
 }
 
 .right {
@@ -124,65 +123,63 @@
   background: var(--color-chip-soft);
 }
 
-.tabBar {
+.menuToggle {
   display: none;
 }
 
 @media (max-width: 860px) {
   .nav {
     flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+  }
+  .brand {
+    flex: 1;
+    min-width: 0;
+  }
+  .brand img {
+    width: clamp(110px, 33vw, 152px);
   }
   .right {
-    width: 100%;
-    min-width: 0;
-    margin-left: 0;
-    flex-wrap: wrap;
-    gap: var(--space-3);
+    margin: 0;
+    gap: var(--space-2);
+  }
+  .user {
+    display: none;
+  }
+  .bell,
+  .logout {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .menuToggle {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
   }
   .links {
     display: none;
-  }
-  .userText {
-    display: none;
-  }
-
-  /* Barra de navegación inferior para móvil. */
-  .tabBar {
-    position: fixed;
-    inset: auto 0 0 0;
-    z-index: 20;
-    display: flex;
-    gap: var(--space-2);
+    order: 2;
+    flex-basis: 100%;
     margin: 0;
-    padding: var(--space-2) var(--space-3);
-    list-style: none;
-    overflow-x: auto;
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-divider);
   }
-
-  .tabBar li {
-    flex: 1 0 auto;
+  .linksOpen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
   }
-
-  .tab {
+  .link {
     width: 100%;
-    min-height: 48px;
-    padding: 0 var(--space-4);
-    border: 0;
+    min-height: 44px;
     border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--color-text-muted);
-    font: inherit;
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-semibold);
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  .tabActive {
-    background: var(--color-chip-soft);
-    color: var(--color-text);
-    font-weight: var(--font-weight-extrabold);
+    text-align: left;
   }
 }

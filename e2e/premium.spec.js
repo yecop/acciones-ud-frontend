@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { iniciarSesion } from "./ayudas.js";
+import { iniciarSesion, irASeccion } from "./ayudas.js";
 
 test("recorre el pago de prueba, administra el seguimiento y cancela Premium", async ({ page }) => {
   await iniciarSesion(page);
-  await page.getByRole("button", { name: "Premium", exact: true }).click();
+  await irASeccion(page, "Premium");
   await expect(page.getByText("Plan básico", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Ver planes" })).toBeVisible();
   await page.getByRole("button", { name: "Elegir Premium mensual" }).click();
@@ -57,7 +57,7 @@ test("muestra el error de carga y permite reintentar", async ({ page }) => {
     };
   });
   await iniciarSesion(page);
-  await page.getByRole("button", { name: "Premium", exact: true }).click();
+  await irASeccion(page, "Premium");
   await expect(page.getByRole("alert")).toBeVisible();
   await page.evaluate(() => sessionStorage.setItem("planes-disponibles", "true"));
   await page.getByRole("button", { name: "Reintentar" }).click();

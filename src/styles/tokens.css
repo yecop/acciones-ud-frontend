@@ -1,7 +1,6 @@
 /**
  * Design tokens de Acciones UD
- * Centralizan tipografía, espaciados y radios. Los colores se definen por
- * tema en themes.css y se seleccionan vía el atributo data-theme en <html>.
+ * Centralizan tipografía, espaciados y radios. Los colores se definen en themes.css.
  */
 :root {
   /* Tipografía */

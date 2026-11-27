@@ -1,5 +1,4 @@
 import BrandHero from "../verification/BrandHero.jsx";
-import ThemeSwitcher from "../../theme/ThemeSwitcher.jsx";
 import styles from "./AuthLayout.module.css";
 
 /**
@@ -13,9 +12,6 @@ import styles from "./AuthLayout.module.css";
 export default function AuthLayout({ hero = {}, children }) {
   return (
     <div className={styles.page}>
-      <div className={styles.switcher}>
-        <ThemeSwitcher />
-      </div>
       <div className={styles.hero}>
         <BrandHero {...hero} />
       </div>

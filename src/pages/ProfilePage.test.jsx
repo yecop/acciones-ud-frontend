@@ -49,12 +49,13 @@ it("guarda datos básicos, actualiza la sesión y los recupera al montar otra ve
 
 it("guarda todos los grupos, conserva preferencias desconocidas y recupera selecciones", async () => {
   db.usuarios[0].preferencias.operaciones.futura = "conservar";
+  db.usuarios[0].preferencias.visualizacion.tema = "bosque";
   const usuario = userEvent.setup();
   const vista = await abrir();
   await usuario.click(screen.getByLabelText("SMS", { exact: true }));
   await usuario.click(screen.getByLabelText("Recibir reporte mensual por correo"));
   await usuario.selectOptions(screen.getByLabelText("Vista del portafolio"), "TARJETAS");
-  await usuario.selectOptions(screen.getByLabelText("Tema de color"), "bosque");
+  expect(screen.queryByLabelText("Tema de color")).not.toBeInTheDocument();
   await usuario.selectOptions(screen.getByLabelText("Tipo de orden por defecto"), "LIMIT");
   await usuario.clear(screen.getByLabelText("Límite diario (USD)"));
   await usuario.type(screen.getByLabelText("Límite diario (USD)"), "2500.50");

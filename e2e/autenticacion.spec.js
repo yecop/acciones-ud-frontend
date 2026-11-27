@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { CODIGO_VENCIDO, enviarCodigo, enviarCredenciales, iniciarSesion } from "./ayudas.js";
+import {
+  CODIGO_VENCIDO,
+  enviarCodigo,
+  enviarCredenciales,
+  iniciarSesion,
+  irASeccion,
+} from "./ayudas.js";
 
 test.describe("ingreso con verificación en dos pasos", () => {
   test("flujo feliz: credenciales, código y llegada al panel", async ({ page }) => {
@@ -94,7 +100,7 @@ test.describe("sesión y rutas protegidas", () => {
     await iniciarSesion(page, "laura@correo.com");
 
     await page.evaluate(() => window.__mock.expirarToken());
-    await page.getByRole("button", { name: "Perfil" }).first().click();
+    await irASeccion(page, "Perfil");
 
     await expect(page.getByRole("heading", { name: /perfil y preferencias/i })).toBeVisible();
     // El heading se pinta antes de que termine la renovación: se espera a que se registre.

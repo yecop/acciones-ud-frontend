@@ -11,7 +11,7 @@ import { obtenerSaldo } from "../api/portafolioApi.js";
  * @returns {{cargando:boolean, error:Error|null, saldo:object|null, dashboard:object|null,
  *   estadoMercado:object|null, refrescar:Function}}
  */
-export function useResumenPanel({ intervaloMs = 30000 } = {}) {
+export function useResumenPanel({ intervaloMs = 30000, activo = true } = {}) {
   const [estado, setEstado] = useState({
     cargando: true,
     error: null,
@@ -53,6 +53,7 @@ export function useResumenPanel({ intervaloMs = 30000 } = {}) {
   }, []);
 
   useEffect(() => {
+    if (!activo) return;
     montado.current = true;
     cargar();
     const id = setInterval(cargar, intervaloMs);
@@ -60,7 +61,7 @@ export function useResumenPanel({ intervaloMs = 30000 } = {}) {
       montado.current = false;
       clearInterval(id);
     };
-  }, [cargar, intervaloMs]);
+  }, [activo, cargar, intervaloMs]);
 
   return { ...estado, refrescar: cargar };
 }
