@@ -351,4 +351,4 @@ El logo aprobado por el cliente vive en `src/assets/marca/` (PNG con fondo trans
 
 ## Pruebas de extremo a extremo (Playwright)
 
-`npm run test:e2e` levanta la app en modo mock y recorre en un navegador real: login con MFA (errores, bloqueos, código vencido), rutas protegidas, cierre de sesión, renovación del token y portafolio, en escritorio y móvil. La primera vez ejecuta `npx playwright install chromium`. Si ya tienes Chrome, define `PW_CHROMIUM_PATH` con su ruta. Las pruebas unitarias (`npm test`) no incluyen la carpeta `e2e/`.
+`npm run test:e2e` levanta la app en modo mock y recorre en un navegador real: login con MFA (errores, bloqueos, código vencido), rutas protegidas, matriz de permisos por rol (`e2e/roles.spec.js`), registro, perfil, acciones, mercados, panel, portafolio, operar, historial y órdenes avanzadas, en escritorio y móvil. El CI las corre en el job «Pruebas E2E (Playwright)» y, si fallan, sube el reporte y las trazas como artefacto. La primera vez ejecuta `npx playwright install chromium`. Si ya tienes Chrome, define `PW_CHROMIUM_PATH` con su ruta. Las pruebas unitarias (`npm test`) no incluyen la carpeta `e2e/`.
