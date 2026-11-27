@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import AppShell from "../layout/AppShell.jsx";
 import DashboardPage from "../pages/DashboardPage.jsx";
 import RegistrationPage from "../pages/RegistrationPage.jsx";
@@ -19,7 +19,13 @@ import { dashboardData } from "../data/dashboardData.js";
 import { useResumenPanel } from "../hooks/useResumenPanel.js";
 import { construirDatosPanel } from "../pages/panelDatos.js";
 import ProtectedRoute from "./ProtectedRoute.jsx";
-import { RUTA_INICIAL_POR_ROL, RUTAS, RUTAS_PROTEGIDAS, rutaDeNavegacion } from "./routesConfig.js";
+import {
+  menuDelRol,
+  RUTA_INICIAL_POR_ROL,
+  RUTAS,
+  RUTAS_PROTEGIDAS,
+  rutaDeNavegacion,
+} from "./routesConfig.js";
 
 /** "/" lleva a la pantalla inicial del rol, o al ingreso si no hay sesión. */
 function Inicio() {
@@ -42,6 +48,7 @@ function fechaDeHoy() {
 function RutaPanel() {
   const { usuario, rol, cerrarSesion } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const resumen = useResumenPanel();
 
   const datos = useMemo(
@@ -60,6 +67,7 @@ function RutaPanel() {
   return (
     <DashboardPage
       data={datos}
+      menu={menuDelRol(rol, pathname)}
       carga={{ cargando: resumen.cargando, error: resumen.error, onReintentar: resumen.refrescar }}
       onNewOrder={() => navigate("/operar")}
       onTrade={(ticker) =>

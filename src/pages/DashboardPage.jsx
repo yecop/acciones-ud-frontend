@@ -18,6 +18,7 @@ import { dashboardData } from "../data/dashboardData.js";
  *
  * @param {object} props
  * @param {object} [props.data]        Datos del panel.
+ * @param {Array<{id:string,label:string,active:boolean}>} [props.menu]
  * @param {{cargando:boolean,error:Error|null,onReintentar:function}} [props.carga] Estado de carga.
  * @param {function} [props.onNewOrder]
  * @param {function} [props.onTrade]   Recibe el símbolo.
@@ -27,6 +28,7 @@ import { dashboardData } from "../data/dashboardData.js";
  */
 export default function DashboardPage({
   data = dashboardData,
+  menu,
   carga,
   onNewOrder,
   onTrade,
@@ -36,7 +38,7 @@ export default function DashboardPage({
 }) {
   return (
     <div className={styles.page}>
-      <TopNav items={data.nav} user={data.user} onNavigate={onNavigate} onLogout={onLogout} />
+      <TopNav items={menu} user={data.user} onNavigate={onNavigate} onLogout={onLogout} />
 
       <main className={styles.main}>
         <div className={styles.greetingRow}>

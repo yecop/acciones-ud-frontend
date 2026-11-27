@@ -97,3 +97,11 @@ export function rutaDeNavegacion(id) {
 export function rutasDelRol(rol) {
   return RUTAS_PROTEGIDAS.filter((r) => r.roles.includes(rol));
 }
+
+export function menuDelRol(rol, pathname) {
+  return rutasDelRol(rol).map(({ id, titulo, path }) => ({
+    id,
+    label: titulo,
+    active: pathname === path || pathname.startsWith(`${path}/`),
+  }));
+}

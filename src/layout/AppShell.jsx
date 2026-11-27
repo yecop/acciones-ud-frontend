@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import TopNav from "../components/dashboard/TopNav.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL } from "../auth/roles.js";
-import { RUTAS, rutaDeNavegacion, rutasDelRol } from "../routes/routesConfig.js";
+import { menuDelRol, RUTAS, rutaDeNavegacion } from "../routes/routesConfig.js";
 import styles from "./AppShell.module.css";
 
 function iniciales(nombre = "") {
@@ -25,11 +25,7 @@ export default function AppShell() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const items = rutasDelRol(rol).map((r) => ({
-    id: r.id,
-    label: r.titulo,
-    active: pathname === r.path || pathname.startsWith(`${r.path}/`),
-  }));
+  const items = menuDelRol(rol, pathname);
 
   const salir = async () => {
     await cerrarSesion();
