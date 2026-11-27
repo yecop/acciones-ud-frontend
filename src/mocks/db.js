@@ -20,6 +20,12 @@ export const BLOQUEO_LOGIN_SEGUNDOS = 30;
 /** Vida del access token en ms. Configurable con VITE_MOCK_ACCESS_TTL_SECONDS. */
 export const TTL_ACCESS_MS = Number(import.meta.env?.VITE_MOCK_ACCESS_TTL_SECONDS ?? 900) * 1000;
 
+/** Deja al usuario asociado a un comisionista del catálogo (clientes demo de SCRUM-65). */
+function conComisionista(usuario, comisionistaId) {
+  const c = COMISIONISTAS.find((x) => x.id === comisionistaId);
+  return { ...usuario, comisionista: { id: c.id, nombre: c.nombre, operaEnNombre: false } };
+}
+
 function usuariosIniciales() {
   const base = (id, correo, nombre, rol) => ({
     id,
@@ -49,6 +55,19 @@ function usuariosIniciales() {
     base("5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e03", "admin@correo.com", "Admin", "ADMINISTRADOR"),
     base("5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e04", "legal@correo.com", "Legal", "LEGAL"),
     base("5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e05", "junta@correo.com", "Junta", "JUNTA_DIRECTIVA"),
+    conComisionista(
+      base("5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e07", "mateo@correo.com", "Mateo", "INVERSIONISTA"),
+      "c1000000-0000-4000-8000-000000000001"
+    ),
+    conComisionista(
+      base(
+        "5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e08",
+        "valentina@correo.com",
+        "Valentina",
+        "INVERSIONISTA"
+      ),
+      "c1000000-0000-4000-8000-000000000002"
+    ),
     {
       ...base(
         "5d2e7a10-3c41-4b8e-9a52-0a1b2c3d4e06",

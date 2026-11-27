@@ -46,11 +46,28 @@ export const RUTAS_PROTEGIDAS = [
     roles: [ROLES.INV, ROLES.COM],
   },
   {
+    id: "mi-comisionista",
+    path: "/mi-comisionista",
+    titulo: "Mi comisionista",
+    roles: [ROLES.INV],
+  },
+  {
     id: "comisionista",
     path: "/comisionista",
     titulo: "Mis clientes",
     roles: [ROLES.COM],
-    pendiente: "Comisionista",
+  },
+  {
+    id: "estrategias",
+    path: "/estrategias",
+    titulo: "Estrategias",
+    roles: [ROLES.COM],
+  },
+  {
+    id: "propuestas",
+    path: "/propuestas",
+    titulo: "Propuestas",
+    roles: [ROLES.INV, ROLES.COM],
   },
   {
     id: "admin",

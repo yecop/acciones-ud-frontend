@@ -10,6 +10,13 @@ import ProfilePage from "../pages/ProfilePage.jsx";
 import PortafolioView from "../pages/PortafolioView.jsx";
 import AccionesPage from "../pages/AccionesPage.jsx";
 import OrdenDetallePage from "../pages/OrdenDetallePage.jsx";
+import ClienteDetallePage from "../pages/ClienteDetallePage.jsx";
+import ClientesPage from "../pages/ClientesPage.jsx";
+import EstrategiasPage from "../pages/EstrategiasPage.jsx";
+import MiComisionistaPage from "../pages/MiComisionistaPage.jsx";
+import NuevaPropuestaPage from "../pages/NuevaPropuestaPage.jsx";
+import PropuestaDetallePage from "../pages/PropuestaDetallePage.jsx";
+import PropuestasPage from "../pages/PropuestasPage.jsx";
 import OrdenesPage from "../pages/OrdenesPage.jsx";
 import HistorialOrdenesPage from "../pages/HistorialOrdenesPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -81,6 +88,10 @@ const PANTALLAS = {
   acciones: <AccionesPage />,
   operar: <OrdenesPage />,
   historial: <HistorialOrdenesPage />,
+  "mi-comisionista": <MiComisionistaPage />,
+  comisionista: <ClientesPage />,
+  estrategias: <EstrategiasPage />,
+  propuestas: <PropuestasPage />,
 };
 
 function PaginaPendiente({ ruta }) {
@@ -131,6 +142,13 @@ export default function AppRoutes() {
               />
             </Route>
           ))}
+          <Route element={<ProtectedRoute roles={[ROLES.COM]} />}>
+            <Route path="/comisionista/clientes/:id" element={<ClienteDetallePage />} />
+            <Route path="/propuestas/nueva" element={<NuevaPropuestaPage />} />
+          </Route>
+          <Route element={<ProtectedRoute roles={[ROLES.INV, ROLES.COM]} />}>
+            <Route path="/propuestas/:id" element={<PropuestaDetallePage />} />
+          </Route>
           <Route element={<ProtectedRoute roles={[ROLES.INV]} />}>
             <Route path="/historial/:id" element={<OrdenDetallePage />} />
           </Route>
