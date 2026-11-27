@@ -6,6 +6,7 @@ export const RUTAS = {
   verificacion: "/verificacion",
   registro: "/registro",
   sinAcceso: "/sin-acceso",
+  fondos: "/portafolio/fondos",
 };
 
 /**

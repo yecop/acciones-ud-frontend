@@ -16,6 +16,8 @@ Usa `obtenerSaldo` de `portafolioApi.js` para leer el mismo saldo que actualizan
 
 La recarga con pasarela de SCRUM-46 tiene su propio endpoint. El mock cubre depósito y retiro simulados, y el pago de suscripción descrito abajo.
 
+En SCRUM-67, abre **Portafolio y órdenes → Depósitos y retiros** desde una cuenta inversionista. Con `nuevo@correo.com` puedes depositar USD 50, comprobar el historial y probar un retiro mayor al saldo antes de confirmar uno válido. La pantalla comparte el cliente entre el mock y el backend. Para probar la integración en un entorno con SCRUM-46, inicia el frontend con `npm run dev` y configura el origen de la API.
+
 ## Propuestas de contrato pendientes de acordar
 
 | Cliente         | Rutas bajo `/api/v1`                                                                                                          | Escenarios                                                                                                                                                                                                               |
