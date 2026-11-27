@@ -9,6 +9,9 @@ import {
   MAX_FALLOS_LOGIN,
 } from "./db.js";
 import { ACCIONES, estadoDeMercado, MERCADOS, monto } from "./mercadosData.js";
+import { crearHandlersFondos } from "./fondos.js";
+import { crearHandlersGestion } from "./gestion.js";
+import { crearHandlersPremium, estadoPremium } from "./premium.js";
 import { crearHandlersNotificaciones } from "./notificaciones.js";
 import {
   aplicarTenencias,
@@ -184,7 +187,9 @@ function vistaPerfil(usuario) {
     nivelExperiencia: usuario.nivelExperiencia,
     intereses: usuario.intereses,
     comisionista: usuario.comisionista,
-    suscripcion: { plan: "BASICO" },
+    suscripcion: {
+      plan: estadoPremium(usuario).suscripcion.estado === "ACTIVA" ? "PREMIUM" : "BASICO",
+    },
   };
 }
 
@@ -650,4 +655,13 @@ export const handlers = [
     pagina,
     conSimulacion: crearConSimulacion({ db, error }),
   }),
+  ...crearHandlersPremium({
+    raiz: RAIZ,
+    proteger: (resolver) => protegido(INV, resolver),
+    error,
+    leerCuerpo,
+    persistir: () => db.persistir(),
+  }),
+  ...crearHandlersFondos({ raiz: RAIZ, db, protegido, error, leerCuerpo, pagina }),
+  ...crearHandlersGestion({ raiz: RAIZ, db, protegido, error, leerCuerpo, pagina }),
 ];

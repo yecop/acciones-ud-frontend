@@ -53,8 +53,9 @@ test.describe("órdenes avanzadas y encolamiento", () => {
     ).toBeVisible();
     await page.getByRole("link", { name: /volver al historial/i }).click();
 
-    await page.getByLabel("Estado").selectOption("DETENIDA");
-    await page.getByRole("button", { name: "Aplicar" }).click();
+    const filtros = page.getByRole("form", { name: "Filtros de órdenes" });
+    await filtros.getByRole("combobox", { name: "Estado", exact: true }).selectOption("DETENIDA");
+    await filtros.getByRole("button", { name: "Aplicar" }).click();
     await page
       .getByRole("link", { name: /ver detalle de la orden de/i })
       .first()
