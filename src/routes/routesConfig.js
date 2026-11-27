@@ -40,6 +40,12 @@ export const RUTAS_PROTEGIDAS = [
     roles: [ROLES.INV],
   },
   {
+    id: "premium",
+    path: "/premium",
+    titulo: "Premium",
+    roles: [ROLES.INV],
+  },
+  {
     id: "perfil",
     path: "/perfil",
     titulo: "Perfil",

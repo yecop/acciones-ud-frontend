@@ -18,6 +18,7 @@ export const dashboardData = {
     { id: "operar", label: "Operar" },
     { id: "historial", label: "Historial" },
     { id: "portafolio", label: "Portafolio y órdenes" },
+    { id: "premium", label: "Premium" },
     { id: "perfil", label: "Perfil" },
   ],
 

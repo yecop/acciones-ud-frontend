@@ -12,6 +12,7 @@ import AccionesPage from "../pages/AccionesPage.jsx";
 import OrdenDetallePage from "../pages/OrdenDetallePage.jsx";
 import OrdenesPage from "../pages/OrdenesPage.jsx";
 import HistorialOrdenesPage from "../pages/HistorialOrdenesPage.jsx";
+import PremiumPage from "../pages/PremiumPage.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ETIQUETA_ROL, ROLES } from "../auth/roles.js";
 import { dashboardData } from "../data/dashboardData.js";
@@ -81,6 +82,7 @@ const PANTALLAS = {
   acciones: <AccionesPage />,
   operar: <OrdenesPage />,
   historial: <HistorialOrdenesPage />,
+  premium: <PremiumPage />,
 };
 
 function PaginaPendiente({ ruta }) {
