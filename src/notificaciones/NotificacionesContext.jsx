@@ -10,6 +10,7 @@ import {
 import { listarNotificaciones } from "../api/notificacionesApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ROLES } from "../auth/roles.js";
+import { useSondeoVisible } from "../hooks/useSondeoVisible.js";
 
 const INTERVALO_MS = 30_000;
 const ROLES_CON_NOTIFICACIONES = [ROLES.INV, ROLES.COM];
@@ -46,12 +47,13 @@ export function NotificacionesProvider({ children, intervaloMs = INTERVALO_MS })
       return undefined;
     }
     refrescar();
-    const id = setInterval(refrescar, intervaloMs);
     return () => {
-      clearInterval(id);
       ciclo.current += 1;
     };
-  }, [activo, refrescar, intervaloMs]);
+  }, [activo, refrescar]);
+
+  // Sondeo periódico: se pausa con la pestaña oculta y refresca una vez al volver.
+  useSondeoVisible(refrescar, intervaloMs, activo);
 
   const valor = useMemo(
     () => ({ disponible: activo, noLeidas, refrescar }),

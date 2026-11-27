@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSondeoVisible } from "./useSondeoVisible.js";
 import { listarNotificaciones, marcarNotificacionLeida } from "../api/notificacionesApi.js";
 
 /**
  * Lista de notificaciones del usuario (`GET /notificaciones`), con filtros y paginación.
- * Se refresca sola cada `intervaloMs` sin mostrar «cargando» otra vez.
+ * Se refresca sola cada `intervaloMs` sin mostrar «cargando» otra vez, y solo mientras la
+ * pestaña está visible (al volver a verla refresca una vez).
  *
  * @param {{tipo?:string, leida?:boolean, pagina?:number, tamano?:number}} [filtros]
  * @param {{intervaloMs?:number}} [opciones] `intervaloMs: 0` desactiva el refresco automático.
@@ -34,16 +36,16 @@ export function useNotificaciones(filtros = {}, { intervaloMs = 30_000 } = {}) {
 
   useEffect(() => {
     cargar();
-    if (!intervaloMs) return undefined;
-    const id = setInterval(() => cargar({ silencioso: true }), intervaloMs);
     return () => {
-      clearInterval(id);
       ciclo.current += 1;
     };
-  }, [cargar, intervaloMs]);
+  }, [cargar]);
 
   const recargar = useCallback(() => cargar(), [cargar]);
   const refrescar = useCallback(() => cargar({ silencioso: true }), [cargar]);
+
+  // Refresco periódico: se pausa con la pestaña oculta y refresca una vez al volver.
+  useSondeoVisible(refrescar, intervaloMs);
 
   /**
    * Marca como leídas las notificaciones dadas. Devuelve cuántas fallaron (0 = todo bien); no
